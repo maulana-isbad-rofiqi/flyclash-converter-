@@ -1,109 +1,387 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>FlyClash Converter PRO — Itsbad</title>
-<style>
-body { font-family: Arial, sans-serif; background: #0d1117; color: #e6edf3; padding: 20px; }
-.container { max-width: 900px; margin: auto; background: #161b22; padding: 20px; border-radius: 10px; }
-h1 { text-align: center; }
-label { display: block; margin-top: 15px; font-weight: bold; }
-input, select, textarea { width: 100%; padding: 10px; border-radius: 5px; border: none; margin-top: 5px; background: #0d1117; color: white; }
-button { margin-top: 20px; width: 100%; padding: 12px; border: none; border-radius: 6px; background: #238636; color: white; font-size: 16px; cursor: pointer; }
-.question { cursor: pointer; margin-left: 6px; color: #58a6ff; }
-.popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #161b22; padding: 20px; border-radius: 10px; border: 1px solid #30363d; max-width: 400px; z-index: 1000; }
-.popup button { background: #d52020; margin-top: 10px; }
-.overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 900; }
-.result { white-space: pre; background: #0d1117; padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px solid #30363d; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlyClash Converter Dual Output</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { bg: '#09090b', glass: '#18181b', primary: '#6366f1' }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #09090b; color: #e4e4e7; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+        .glass { background: rgba(24, 24, 27, 0.9); border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* Input Styles */
+        .input-dark { background: #09090b; border: 1px solid #3f3f46; color: #f4f4f5; width: 100%; border-radius: 6px; padding: 8px; font-size: 13px; outline: none; transition: 0.2s; }
+        .input-dark:focus { border-color: #6366f1; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #18181b; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+        
+        /* Checkbox Custom */
+        .check-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 8px; border: 1px solid transparent; background: rgba(255,255,255,0.03); cursor: pointer; transition: 0.2s; }
+        .check-item:hover { border-color: #6366f1; background: rgba(99, 102, 241, 0.1); }
+        .check-item input { accent-color: #6366f1; width: 16px; height: 16px; cursor: pointer; }
+        
+        /* Help Button */
+        .help-btn { color: #71717a; padding: 0 5px; font-weight: bold; font-size: 14px; transition: 0.2s; }
+        .help-btn:hover { color: #fff; }
+
+        /* Mode Button Active State */
+        .mode-btn { transition: 0.2s; border: 1px solid transparent; }
+        .mode-btn.active { background: rgba(99, 102, 241, 0.2); border-color: #6366f1; color: white; }
+        
+        /* Tabs */
+        .tab-btn { padding: 10px 15px; font-size: 12px; font-weight: bold; color: #71717a; border-bottom: 2px solid transparent; transition: 0.2s; }
+        .tab-btn:hover { color: #fff; }
+        .tab-btn.active { color: #6366f1; border-color: #6366f1; }
+        
+        /* Modal */
+        #help-modal { transition: opacity 0.2s; }
+        .hidden { display: none !important; }
+    </style>
 </head>
-<body>
-<div class="container">
-<h1>FlyClash Converter PRO — Itsbad</h1>
+<body class="min-h-screen p-4 md:p-8">
 
-<label>Masukkan Akun V2Ray/VLESS</label>
-<textarea id="inputConfig" rows="5" placeholder="Paste akun V2Ray/VLESS di sini..."></textarea>
+    <div class="max-w-7xl mx-auto mb-6 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-white flex items-center gap-3">
+            <span class="text-primary">⚡</span> FlyClash Dual Output
+        </h1>
+        <div class="text-xs font-mono text-zinc-500 border border-zinc-800 px-3 py-1 rounded-full">Dev: Itsbad</div>
+    </div>
 
-<label>Mode Koneksi <span class="question" onclick="showPopup('mode')">?</span></label>
-<select id="mode">
-<option value="bestping">Best Ping</option>
-<option value="loadbalance">Load Balance</option>
-<option value="manual">Manual</option>
-</select>
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 pb-20">
+        
+        <div class="lg:col-span-5 space-y-6">
+            
+            <div class="glass p-5 rounded-xl border-l-4 border-l-primary">
+                <div class="flex justify-between mb-2">
+                    <label class="text-xs font-bold text-gray-400">1. INPUT CONFIG</label>
+                    <span id="node-count" class="text-xs text-primary font-mono">0 nodes</span>
+                </div>
+                <textarea id="input-config" class="w-full h-32 bg-black/30 border border-zinc-700 rounded-lg p-3 text-xs font-mono text-gray-300 focus:border-primary focus:outline-none resize-none" placeholder="Paste vmess:// vless:// trojan:// di sini..."></textarea>
+                <div class="flex justify-end mt-2">
+                    <button onclick="clearInput()" class="text-xs text-red-400 hover:text-red-300">Clear</button>
+                </div>
+            </div>
 
-<label>DNS Mode <span class="question" onclick="showPopup('dns')">?</span></label>
-<select id="dnsMode">
-<option value="fakeip">Fake-IP (Default)</option>
-<option value="dns">DNS Normal</option>
-<option value="custom">Custom DNS</option>
-</select>
+            <div>
+                <label class="text-xs font-bold text-gray-400 mb-2 block">2. PILIH MODE (Bisa Banyak)</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <div onclick="toggleMode('url-test')" id="btn-url-test" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center active">
+                        <div class="flex items-center gap-2"><span class="text-lg">⚡</span> <span class="text-sm font-bold">Auto Ping</span></div>
+                        <button onclick="showHelp(event, 'auto')" class="help-btn">?</button>
+                    </div>
+                    <div onclick="toggleMode('select')" id="btn-select" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center">
+                        <div class="flex items-center gap-2"><span class="text-lg">⚙️</span> <span class="text-sm font-bold">Manual</span></div>
+                        <button onclick="showHelp(event, 'manual')" class="help-btn">?</button>
+                    </div>
+                    <div onclick="toggleMode('load-balance')" id="btn-load-balance" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center">
+                        <div class="flex items-center gap-2"><span class="text-lg">🔄</span> <span class="text-sm font-bold">Load Bal</span></div>
+                        <button onclick="showHelp(event, 'lb')" class="help-btn">?</button>
+                    </div>
+                    <div onclick="toggleMode('fallback')" id="btn-fallback" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center">
+                        <div class="flex items-center gap-2"><span class="text-lg">🛡️</span> <span class="text-sm font-bold">Fallback</span></div>
+                        <button onclick="showHelp(event, 'fallback')" class="help-btn">?</button>
+                    </div>
+                </div>
+            </div>
 
-<label>Custom DNS (jika dipilih)</label>
-<input id="dnsCustom" placeholder="1.1.1.1, 1.0.0.1" />
+            <div class="glass p-5 rounded-xl space-y-4">
+                <h3 class="text-sm font-bold text-gray-200 border-b border-zinc-700 pb-2">3. PENGATURAN</h3>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] text-gray-500 mb-1 flex items-center justify-between">INTERVAL (s) <button onclick="showHelp(event, 'interval')" class="help-btn">?</button></label>
+                        <input type="number" id="interval" value="300" class="input-dark">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-500 mb-1 flex items-center justify-between">NAMA GRUP <button onclick="showHelp(event, 'group_name')" class="help-btn">?</button></label>
+                        <input type="text" id="group-name" value="FLYCLASH" class="input-dark">
+                    </div>
+                </div>
 
-<h3>FlyClash System Settings (Auto Apply)</h3>
-<ul>
-<li>Always Reconnect</li>
-<li>WakeLock ON</li>
-<li>MTU: 1500</li>
-<li>UDPGW: 7300</li>
-<li>HTTP Proxy Port: 8800</li>
-<li>SOCKS5 Port: 3080</li>
-<li>DNS Local Port: 7200</li>
-<li>DNS Primary: 1.1.1.1</li>
-<li>DNS Secondary: 1.0.0.1</li>
-<li>Ping Interval: 1000ms</li>
-<li>Timeout: 3000ms</li>
-<li>Auto Reconnect: 3x</li>
-</ul>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] text-gray-500 mb-1 flex items-center justify-between">MIXED PORT <button onclick="showHelp(event, 'mixed_port')" class="help-btn">?</button></label>
+                        <input type="number" id="mixed-port" value="7890" class="input-dark">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-500 mb-1 flex items-center justify-between">DNS MODE <button onclick="showHelp(event, 'dns')" class="help-btn">?</button></label>
+                        <select id="dns-mode" onchange="toggleCustomDns()" class="input-dark">
+                            <option value="default">Default</option>
+                            <option value="fake-ip">⚡ Fake-IP (Anti Bengong)</option>
+                            <option value="custom">Custom IP</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <input type="text" id="custom-dns" value="8.8.8.8, 1.1.1.1" class="input-dark hidden" placeholder="8.8.8.8, 1.1.1.1">
 
-<button onclick="generateConfig()">Generate FlyClash Script</button>
+                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-800">
+                    <label class="check-item">
+                        <div class="flex gap-2"><input type="checkbox" id="skip-cert" checked><span class="text-xs text-gray-300">Skip Cert</span></div>
+                        <button onclick="showHelp(event, 'skip_cert')" class="help-btn">?</button>
+                    </label>
+                    <label class="check-item">
+                        <div class="flex gap-2"><input type="checkbox" id="block-ads"><span class="text-xs text-gray-300">Block Ads</span></div>
+                        <button onclick="showHelp(event, 'block_ads')" class="help-btn">?</button>
+                    </label>
+                    <label class="check-item">
+                        <div class="flex gap-2"><input type="checkbox" id="top-prio" checked><span class="text-xs text-gray-300">Top Priority</span></div>
+                        <button onclick="showHelp(event, 'top_prio')" class="help-btn">?</button>
+                    </label>
+                    <label class="check-item">
+                        <div class="flex gap-2"><input type="checkbox" id="allow-lan" checked><span class="text-xs text-gray-300">Allow LAN</span></div>
+                        <button onclick="showHelp(event, 'allow_lan')" class="help-btn">?</button>
+                    </label>
+                </div>
 
-<div id="result" class="result"></div>
-</div>
+                <button onclick="generateScript()" class="w-full py-3 bg-primary hover:bg-indigo-500 text-white font-bold rounded-lg mt-4 shadow-lg shadow-indigo-500/20 transition">GENERATE CONFIG</button>
+            </div>
+        </div>
 
-<div id="overlay" class="overlay"></div>
-<div id="popup" class="popup">
-<div id="popupText"></div>
-<button onclick="closePopup()">Tutup</button>
-</div>
+        <div class="lg:col-span-7">
+            <div class="glass flex flex-col rounded-xl overflow-hidden h-[600px] border border-zinc-800">
+                
+                <div class="bg-zinc-900/80 border-b border-zinc-800 flex items-center">
+                    <button onclick="switchTab('js')" id="tab-js" class="tab-btn active w-1/2">JAVASCRIPT (Override)</button>
+                    <button onclick="switchTab('yaml')" id="tab-yaml" class="tab-btn w-1/2">YAML (Profile)</button>
+                </div>
 
-<script>
-function showPopup(type){
- let text = {
-  mode: "Best Ping = memilih server tercepat otomatis.\nLoad Balance = membagi trafik ke semua server.\nManual = pilih server tertentu.",
-  dns: "Fake-IP = kompitibel & cepat.\nDNS Normal = tanpa Fake-IP.\nCustom = masukkan DNS sendiri."
- }[type];
- document.getElementById('popupText').innerText = text;
- document.getElementById('popup').style.display = 'block';
- document.getElementById('overlay').style.display = 'block';
-}
-function closePopup(){
- document.getElementById('popup').style.display = 'none';
- document.getElementById('overlay').style.display = 'none';
-}
+                <div id="view-js" class="flex-1 flex flex-col h-full">
+                    <div class="p-2 border-b border-zinc-800/50 flex justify-between items-center bg-zinc-900/50">
+                        <span class="text-[10px] text-zinc-500 pl-2">Format: JS Override (FlyClash)</span>
+                        <div class="flex gap-2">
+                            <button onclick="copyText('js')" class="text-[10px] bg-zinc-800 hover:bg-zinc-700 text-white px-2 py-1 rounded">Copy JS</button>
+                            <button onclick="downloadFile('js')" class="text-[10px] bg-primary hover:bg-indigo-600 text-white px-2 py-1 rounded">Save .js</button>
+                        </div>
+                    </div>
+                    <textarea id="output-js" readonly class="flex-1 bg-black/50 p-4 font-mono text-xs leading-relaxed text-gray-300 resize-none focus:outline-none"></textarea>
+                </div>
 
-function generateConfig(){
- let input = document.getElementById('inputConfig').value.trim().split("\n");
- let mode = document.getElementById('mode').value;
- let dnsMode = document.getElementById('dnsMode').value;
- let dnsCustom = document.getElementById('dnsCustom').value;
+                <div id="view-yaml" class="hidden flex-1 flex flex-col h-full">
+                    <div class="p-2 border-b border-zinc-800/50 flex justify-between items-center bg-zinc-900/50">
+                        <span class="text-[10px] text-zinc-500 pl-2">Format: YAML (Standard Clash)</span>
+                        <div class="flex gap-2">
+                            <button onclick="copyText('yaml')" class="text-[10px] bg-zinc-800 hover:bg-zinc-700 text-white px-2 py-1 rounded">Copy YAML</button>
+                            <button onclick="downloadFile('yaml')" class="text-[10px] bg-yellow-600 hover:bg-yellow-500 text-white px-2 py-1 rounded">Save .yaml</button>
+                        </div>
+                    </div>
+                    <textarea id="output-yaml" readonly class="flex-1 bg-black/50 p-4 font-mono text-xs leading-relaxed text-yellow-100/80 resize-none focus:outline-none"></textarea>
+                </div>
 
- let dnsBlock = dnsMode === 'custom' ? dnsCustom : dnsMode;
+            </div>
+        </div>
+    </div>
 
- let output = "# FlyClash Config — Generated by Itsbad\n";
- output += `mode: ${mode}\n`;
- output += `dns_mode: ${dnsBlock}\n`;
- output += `system: { mtu:1500, udpgw:7300, wakelock:true, always_reconnect:true, http_port:8800, socks_port:3080, dns_local:7200, interval:1000, timeout:3000, autoreconnect:3 }\n`;
+    <div id="help-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm" onclick="closeHelp()">
+        <div class="bg-[#18181b] border border-zinc-700 w-full max-w-sm rounded-xl p-6 shadow-2xl" onclick="event.stopPropagation()">
+            <h3 id="modal-title" class="text-lg font-bold text-primary mb-2">Title</h3>
+            <p id="modal-desc" class="text-sm text-zinc-300 mb-4 whitespace-pre-line leading-relaxed">Desc</p>
+            <button onclick="closeHelp()" class="w-full py-2 bg-zinc-800 rounded text-xs font-bold text-zinc-300 hover:bg-zinc-700">TUTUP</button>
+        </div>
+    </div>
 
- output += "proxies:\n";
- input.forEach((line, i)=>{
-  if(line.trim() !== "") output += `  - name: server${i+1}\n    link: "${line.trim()}"\n`;
- });
+    <script>
+        // State
+        const activeModes = new Set(['url-test']);
+        
+        // Data Penjelasan
+        const helpData = {
+            'auto': {t: "Auto Ping", d: "Otomatis pilih akun ping tercepat."},
+            'manual': {t: "Manual Select", d: "Pilih akun manual di FlyClash."},
+            'lb': {t: "Load Balance", d: "Gabung bandwidth akun."},
+            'fallback': {t: "Fallback", d: "Akun cadangan otomatis."},
+            'interval': {t: "Interval", d: "Waktu cek ping (detik)."},
+            'group_name': {t: "Nama Grup", d: "Label nama grup proxy."},
+            'mixed_port': {t: "Mixed Port", d: "Port lokal proxy (Default 7890)."},
+            'allow_lan': {t: "Allow LAN", d: "Share koneksi VPN via Wifi."},
+            'dns': {t: "DNS Strategy", d: "Fake-IP: Anti Bengong.\nCustom: Force DNS."},
+            'skip_cert': {t: "Skip Cert", d: "Matikan validasi SSL (Wajib akun gratis)."},
+            'block_ads': {t: "Block Ads", d: "Blokir iklan dasar."},
+            'top_prio': {t: "Top Priority", d: "Taruh grup di paling atas daftar."}
+        };
 
- document.getElementById('result').innerText = output;
-}
-</script>
+        function toggleMode(mode) {
+            const btn = document.getElementById('btn-' + mode);
+            if (activeModes.has(mode)) {
+                if (activeModes.size > 1) { activeModes.delete(mode); btn.classList.remove('active'); }
+            } else { activeModes.add(mode); btn.classList.add('active'); }
+        }
+
+        function toggleCustomDns() {
+            const val = document.getElementById('dns-mode').value;
+            const input = document.getElementById('custom-dns');
+            val === 'custom' ? input.classList.remove('hidden') : input.classList.add('hidden');
+        }
+
+        function clearInput() {
+            document.getElementById('input-config').value = '';
+            document.getElementById('node-count').innerText = '0 nodes';
+        }
+
+        function showHelp(e, key) {
+            e.preventDefault(); e.stopPropagation();
+            const data = helpData[key];
+            if(data) {
+                document.getElementById('modal-title').innerText = data.t;
+                document.getElementById('modal-desc').innerText = data.d;
+                document.getElementById('help-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeHelp() { document.getElementById('help-modal').classList.add('hidden'); }
+
+        function switchTab(tab) {
+            document.getElementById('view-js').classList.add('hidden');
+            document.getElementById('view-yaml').classList.add('hidden');
+            document.getElementById('tab-js').classList.remove('active');
+            document.getElementById('tab-yaml').classList.remove('active');
+
+            document.getElementById('view-' + tab).classList.remove('hidden');
+            document.getElementById('tab-' + tab).classList.add('active');
+        }
+
+        // --- PARSER ---
+        function parseConfig(line, index) {
+            try {
+                if (line.startsWith("vmess://")) {
+                    const b64 = line.replace("vmess://", "");
+                    const conf = JSON.parse(atob(b64));
+                    return {
+                        name: conf.ps || `VMess-${index}`, type: "vmess", server: conf.add, port: parseInt(conf.port), uuid: conf.id, alterId: parseInt(conf.aid || 0), cipher: "auto", tls: conf.tls === "tls", servername: conf.host || conf.sni || "", network: conf.net || "ws", "ws-opts": conf.net === "ws" ? { path: conf.path || "/", headers: { Host: conf.host || "" } } : undefined, "grpc-opts": conf.net === "grpc" ? { "grpc-service-name": conf.path || "grpc" } : undefined
+                    };
+                } else if (line.startsWith("vless://") || line.startsWith("trojan://")) {
+                    const url = new URL(line);
+                    const isVless = line.startsWith("vless://");
+                    const params = url.searchParams;
+                    const result = {
+                        name: decodeURIComponent(url.hash.slice(1)) || `${isVless ? 'VLESS' : 'Trojan'}-${index}`, type: isVless ? "vless" : "trojan", server: url.hostname, port: parseInt(url.port), uuid: url.username, password: isVless ? undefined : url.username, tls: params.get("security") === "tls" || params.get("security") === "reality", servername: params.get("sni") || "", network: params.get("type") || "tcp", "client-fingerprint": params.get("fp") || "chrome",
+                    };
+                    if (params.get("type") === "ws") result["ws-opts"] = { path: params.get("path") || "/", headers: { Host: params.get("host") || params.get("sni") || "" } };
+                    if (params.get("type") === "grpc") result["grpc-opts"] = { "grpc-service-name": params.get("serviceName") || "grpc" };
+                    if (params.get("security") === "reality") result["reality-opts"] = { "public-key": params.get("pbk") || "", "short-id": params.get("sid") || "" };
+                    return result;
+                }
+                return null;
+            } catch (e) { return null; }
+        }
+
+        // --- GENERATOR ---
+        function generateScript() {
+            const inputVal = document.getElementById('input-config').value;
+            const lines = inputVal.split('\n').filter(l => l.trim().length > 5);
+            const nodes = lines.map((l, i) => parseConfig(l.trim(), i)).filter(n => n !== null);
+            document.getElementById('node-count').innerText = nodes.length + ' nodes';
+
+            if (nodes.length === 0) {
+                document.getElementById('output-js').value = "// Error: Config tidak valid.";
+                document.getElementById('output-yaml').value = "# Error: Config tidak valid.";
+                return;
+            }
+
+            const interval = document.getElementById('interval').value;
+            const groupName = document.getElementById('group-name').value;
+            const mixedPort = document.getElementById('mixed-port').value;
+            const allowLan = document.getElementById('allow-lan').checked;
+            const skipCert = document.getElementById('skip-cert').checked;
+            const blockAds = document.getElementById('block-ads').checked;
+            const topPrio = document.getElementById('top-prio').checked;
+            const dnsMode = document.getElementById('dns-mode').value;
+            const customDns = document.getElementById('custom-dns').value;
+
+            // Update Nodes
+            nodes.forEach(n => {
+                if (skipCert) n['skip-cert-verify'] = true;
+                n.udp = true;
+            });
+
+            // --- 1. GENERATE JS OVERRIDE ---
+            let dnsConfigJS = "// DNS: Default";
+            if(dnsMode === 'fake-ip') dnsConfigJS = `config.dns = { "enable": true, "ipv6": false, "listen": "0.0.0.0:1053", "enhanced-mode": "fake-ip", "fake-ip-range": "198.18.0.1/16", "fake-ip-filter": ["*.lan", "*.local", "time.*.com", "wpad.+"], "default-nameserver": ["8.8.8.8", "1.1.1.1"], "nameserver": ["https://dns.google/dns-query", "https://1.1.1.1/dns-query"], "fallback": ["https://doh.pub/dns-query", "8.8.8.8"], "fallback-filter": { "geoip": true, "ipcidr": ["240.0.0.0/4"] } };`;
+            else if (dnsMode === 'custom') dnsConfigJS = `if(!config.dns) config.dns = {}; config.dns.nameserver = ${JSON.stringify(customDns.split(',').map(s=>s.trim()))};`;
+
+            let extraRules = [];
+            if(blockAds) extraRules.push("DOMAIN-KEYWORD,ads,REJECT", "DOMAIN-SUFFIX,doubleclick.net,REJECT");
+            const rulesStr = JSON.stringify(extraRules);
+
+            const activeModesArr = Array.from(activeModes);
+            const groupsStr = activeModesArr.map(mode => {
+                let niceName = mode === 'url-test' ? "AUTO" : mode === 'select' ? "MANUAL" : mode === 'load-balance' ? "LB" : "FALLBACK";
+                return `{ "name": "${groupName} (${niceName})", "type": "${mode}", "url": "http://www.gstatic.com/generate_204", "interval": ${interval}, ${mode === 'load-balance' ? '"strategy": "consistent-hashing",' : ''} "proxies": proxies.map(p => p.name) }`;
+            }).join(",\n    ");
+
+            const jsOutput = `// FlyClash Override\n// Dev: Itsbad\n// Modes: ${activeModesArr.join(', ')}\n\nfunction main(config) {\n    const proxies = ${JSON.stringify(nodes, null, 2)};\n    config.proxies = (config.proxies || []).concat(proxies);\n    \n    const newGroups = [\n    ${groupsStr}\n    ];\n\n    if (!config['proxy-groups']) config['proxy-groups'] = [];\n    ${topPrio ? "config['proxy-groups'].unshift(...newGroups);" : "config['proxy-groups'].push(...newGroups);"}\n\n    config['allow-lan'] = ${allowLan};\n    config['mixed-port'] = ${mixedPort};\n    config['ipv6'] = false;\n\n    ${dnsConfigJS}\n\n    const newRules = ${rulesStr};\n    if(newRules.length > 0) config.rules = newRules.concat(config.rules || []);\n\n    config['proxy-groups'].forEach(g => {\n        if (g.type === 'select' && !newGroups.find(ng => ng.name === g.name)) {\n            newGroups.forEach(ng => g.proxies.push(ng.name));\n        }\n    });\n\n    return config;\n}`;
+            document.getElementById('output-js').value = jsOutput;
+
+            // --- 2. GENERATE YAML ---
+            let yaml = `port: ${mixedPort}\nallow-lan: ${allowLan}\nmode: rule\nlog-level: info\nipv6: false\n`;
+            
+            // DNS YAML
+            if (dnsMode === 'fake-ip') {
+                yaml += `dns:\n  enable: true\n  ipv6: false\n  listen: 0.0.0.0:1053\n  enhanced-mode: fake-ip\n  fake-ip-range: 198.18.0.1/16\n  default-nameserver:\n    - 8.8.8.8\n  nameserver:\n    - 8.8.8.8\n    - 1.1.1.1\n`;
+            } else if (dnsMode === 'custom') {
+                 yaml += `dns:\n  enable: true\n  nameserver:\n${customDns.split(',').map(d => `    - ${d.trim()}`).join('\n')}\n`;
+            }
+
+            // Proxies YAML
+            yaml += `\nproxies:\n`;
+            nodes.forEach(n => {
+                yaml += `  - name: ${n.name}\n    type: ${n.type}\n    server: ${n.server}\n    port: ${n.port}\n    uuid: ${n.uuid}\n    cipher: ${n.cipher || 'auto'}\n    udp: true\n    tls: ${n.tls}\n    skip-cert-verify: ${n['skip-cert-verify']}\n    network: ${n.network}\n    servername: ${n.servername}\n`;
+                if(n['ws-opts']) {
+                    yaml += `    ws-opts:\n      path: ${n['ws-opts'].path}\n      headers:\n        Host: ${n['ws-opts'].headers.Host}\n`;
+                }
+            });
+
+            // Groups YAML
+            yaml += `\nproxy-groups:\n`;
+            activeModesArr.forEach(mode => {
+                let niceName = mode === 'url-test' ? "AUTO" : mode === 'select' ? "MANUAL" : mode === 'load-balance' ? "LB" : "FALLBACK";
+                yaml += `  - name: ${groupName} (${niceName})\n    type: ${mode}\n    url: http://www.gstatic.com/generate_204\n    interval: ${interval}\n`;
+                if (mode === 'load-balance') yaml += `    strategy: consistent-hashing\n`;
+                yaml += `    proxies:\n${nodes.map(n => `      - ${n.name}`).join('\n')}\n`;
+            });
+
+            // Rules YAML
+            yaml += `\nrules:\n`;
+            if (blockAds) {
+                yaml += `  - DOMAIN-KEYWORD,ads,REJECT\n  - DOMAIN-SUFFIX,doubleclick.net,REJECT\n`;
+            }
+            yaml += `  - MATCH,${groupName} (${activeModesArr.includes('url-test') ? 'AUTO' : 'MANUAL'})\n`;
+
+            document.getElementById('output-yaml').value = yaml;
+        }
+
+        function copyText(type) {
+            const el = document.getElementById('output-' + type);
+            el.select();
+            document.execCommand('copy');
+            alert("Berhasil disalin!");
+        }
+
+        function downloadFile(type) {
+            const txt = document.getElementById('output-' + type).value;
+            const blob = new Blob([txt], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = type === 'js' ? 'flyclash-override.js' : 'config.yaml';
+            a.click();
+        }
+    </script>
 </body>
 </html>
