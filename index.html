@@ -1,172 +1,43 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>FlyClash Converter PRO</title>
-  
-  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/644/644667.png" type="image/png">
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  
-  <script src="https://unpkg.com/lucide@latest"></script>
-  
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-
-  <div class="app-container">
-    <header class="app-header">
-      <div class="brand">
-        <div class="logo-box"><i data-lucide="zap" class="logo-icon"></i></div>
-        <div>
-          <h1>FlyClash <span class="badge-pro">PRO</span></h1>
-          <p class="subtitle">Converter & Generator</p>
-        </div>
-      </div>
-      <div class="meta-info">
-        <span class="creator">Dev: <strong>Itsbad</strong></span>
-      </div>
-    </header>
-
-    <main class="main-grid">
-      <section class="card input-section">
-        <div class="card-header">
-          <h2><i data-lucide="server" width="18"></i> Input Config</h2>
-          <button class="info-btn" data-key="input"><i data-lucide="help-circle" width="16"></i></button>
-        </div>
-        
-        <div class="input-wrapper">
-          <textarea id="fc-input" placeholder="Tempel link vmess:// vless:// trojan:// ss:// di sini... (Satu link per baris)"></textarea>
-          <div class="input-actions">
-            <button id="fc-clear" class="btn btn-ghost"><i data-lucide="trash-2" width="16"></i></button>
-            <button id="fc-validate" class="btn btn-ghost">Check</button>
-            <button id="fc-generate" class="btn btn-primary"><i data-lucide="play" width="16"></i> Generate</button>
-          </div>
-        </div>
-
-        <div class="settings-grid">
-          <div class="setting-item full-width">
-            <div class="label-row">
-                <label>Mode Strategy</label>
-                <button class="info-btn" data-key="mode"><i data-lucide="help-circle" width="14"></i></button>
-            </div>
-            <div class="select-wrapper">
-              <select id="fc-mode">
-                <option value="auto">🚀 Auto Best Ping (Paling Cepat)</option>
-                <option value="manual">👆 Manual Select (Pilih Sendiri)</option>
-                <option value="loadbalance">⚖️ Load Balance (Gabung Speed)</option>
-                <option value="fallback">🛡️ Failover (Cadangan Otomatis)</option>
-                <option value="hybrid" style="font-weight:bold; color:#06b6d4">🔥 Hybrid (Auto + Manual + Fallback)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="setting-group">
-            <div class="setting-item">
-              <div class="label-row">
-                  <label>Interval (s)</label>
-                  <button class="info-btn" data-key="interval"><i data-lucide="help-circle" width="14"></i></button>
-              </div>
-              <input id="fc-interval" type="number" min="1" value="5" />
-            </div>
-            <div class="setting-item">
-              <div class="label-row">
-                  <label>Group Name</label>
-                  <button class="info-btn" data-key="group"><i data-lucide="help-circle" width="14"></i></button>
-              </div>
-              <input id="fc-group" type="text" value="AUTO BEST PING" />
-            </div>
-          </div>
-
-          <div class="toggles-container">
-            <div class="toggle-item">
-                <label class="switch">
-                  <input id="fc-skip" type="checkbox" checked />
-                  <span class="slider"></span>
-                </label>
-                <span class="toggle-label">Skip Cert</span>
-                <button class="info-btn" data-key="skipcert"><i data-lucide="help-circle" width="12"></i></button>
-            </div>
-            
-            <div class="toggle-item">
-                <label class="switch">
-                  <input id="fc-ad" type="checkbox" />
-                  <span class="slider"></span>
-                </label>
-                <span class="toggle-label">AdBlock</span>
-                <button class="info-btn" data-key="adblock"><i data-lucide="help-circle" width="12"></i></button>
-            </div>
-
-            <div class="toggle-item">
-                <label class="switch">
-                  <input id="fc-autoadd" type="checkbox" checked />
-                  <span class="slider"></span>
-                </label>
-                <span class="toggle-label">Auto Insert</span>
-                <button class="info-btn" data-key="autoinsert"><i data-lucide="help-circle" width="12"></i></button>
-            </div>
-          </div>
-
-          <div id="fc-lb-area" class="setting-item hidden">
-            <div class="label-row">
-                <label>LB Weights</label>
-                <button class="info-btn" data-key="weights"><i data-lucide="help-circle" width="14"></i></button>
-            </div>
-            <input id="fc-lb" placeholder="Contoh: 50,30,20" />
-          </div>
-
-          <div class="setting-item">
-            <div class="label-row">
-                <label>Custom DNS</label>
-                <button class="info-btn" data-key="dns"><i data-lucide="help-circle" width="14"></i></button>
-            </div>
-            <input id="fc-dns" value="8.8.8.8, 1.1.1.1" />
-          </div>
-        </div>
-      </section>
-
-      <section class="card output-section">
-        <div class="card-header">
-          <h2><i data-lucide="code" width="18"></i> Result</h2>
-          <div class="tab-buttons">
-            <button class="tab-btn active" data-target="js">JS</button>
-            <button class="tab-btn" data-target="yaml">YAML</button>
-          </div>
-        </div>
-
-        <div class="code-container">
-          <pre id="fc-js" class="code-block active">// Hasil script akan muncul di sini...</pre>
-          <pre id="fc-yaml" class="code-block"></pre>
-        </div>
-
-        <div class="action-buttons">
-          <button id="fc-copy-js" class="btn btn-secondary"><i data-lucide="copy" width="16"></i> Copy</button>
-          <button id="fc-download-js" class="btn btn-outline"><i data-lucide="download" width="16"></i> Save</button>
-          <button id="fc-copy-yaml" class="btn btn-secondary hidden"><i data-lucide="copy" width="16"></i> Copy</button>
-        </div>
-      </section>
-    </main>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlyClash Converter Pro</title>
     
-    <footer class="app-footer">
-      <p>FlyClash Converter &bull; Developer: <strong>Itsbad</strong></p>
-    </footer>
-  </div>
+    <link rel="stylesheet" href="style.css">
 
-  <div id="info-modal" class="modal-overlay hidden">
-      <div class="modal-content">
-          <div class="modal-header">
-              <h3 id="modal-title">Title</h3>
-              <button id="close-modal"><i data-lucide="x" width="20"></i></button>
-          </div>
-          <div class="modal-body" id="modal-desc">
-              Description goes here.
-          </div>
-      </div>
-  </div>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-  <script src="script.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#09090b',
+                        surface: '#18181b',
+                        surface2: '#27272a',
+                        primary: '#6366f1', 
+                        accent: '#8b5cf6',
+                    },
+                    fontFamily: {
+                        mono: ['Fira Code', 'monospace'],
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+    <div id="root"></div>
+
+    <script type="text/babel" src="script.js"></script>
 </body>
 </html>
