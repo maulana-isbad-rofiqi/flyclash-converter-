@@ -4,10 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FlyClash Converter PRO</title>
+  
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/644/644667.png" type="image/png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
   <script src="https://unpkg.com/lucide@latest"></script>
+  
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -22,8 +27,7 @@
         </div>
       </div>
       <div class="meta-info">
-        <span id="clock">00:00</span>
-        <span class="creator">by Itsbad-</span>
+        <span class="creator"><i data-lucide="code-2" width="14"></i> Developer: <strong>Itsbad</strong></span>
       </div>
     </header>
 
@@ -44,7 +48,10 @@
 
         <div class="settings-grid">
           <div class="setting-item">
-            <label>Mode Strategy</label>
+            <label class="label-with-icon">
+                Mode Strategy 
+                <span class="tooltip" data-tip="Auto: Pilih ping terendah | Manual: Pilih sendiri | LB: Gabung speed | Fallback: Cadangan otomatis">(?)</span>
+            </label>
             <div class="select-wrapper">
               <select id="fc-mode">
                 <option value="auto">🚀 Auto Best Ping</option>
@@ -57,8 +64,11 @@
 
           <div class="setting-group">
             <div class="setting-item">
-              <label>Interval (s)</label>
-              <input id="fc-interval" type="number" min="1" value="300" />
+              <label class="label-with-icon">
+                  Interval (s) 
+                  <span class="tooltip" data-tip="Jeda waktu antar pengecekan ping (detik)">(?)</span>
+              </label>
+              <input id="fc-interval" type="number" min="1" value="5" />
             </div>
             <div class="setting-item">
               <label>Group Name</label>
@@ -67,17 +77,17 @@
           </div>
 
           <div class="toggles-wrapper">
-            <label class="toggle">
+            <label class="toggle" title="Abaikan SSL error (Insecure mode)">
               <input id="fc-skip" type="checkbox" checked />
               <span class="slider"></span>
               <span class="label-text">Skip Cert</span>
             </label>
-            <label class="toggle">
+            <label class="toggle" title="Blokir domain iklan umum">
               <input id="fc-ad" type="checkbox" />
               <span class="slider"></span>
               <span class="label-text">AdBlock</span>
             </label>
-            <label class="toggle">
+            <label class="toggle" title="Otomatis masukkan grup ini ke grup Proxy utama FlyClash">
               <input id="fc-autoadd" type="checkbox" checked />
               <span class="slider"></span>
               <span class="label-text">Auto Insert</span>
@@ -85,12 +95,18 @@
           </div>
 
           <div id="fc-lb-area" class="setting-item hidden">
-            <label>Load Balance Weights (e.g., 50,30,20)</label>
+            <label class="label-with-icon">
+                Load Balance Weights
+                <span class="tooltip" data-tip="Contoh: 50,30,20 (Prioritas traffic server)">(?)</span>
+            </label>
             <input id="fc-lb" placeholder="Leave empty for equal weights" />
           </div>
 
           <div class="setting-item">
-            <label>Custom DNS (Comma separated)</label>
+            <label class="label-with-icon">
+                Custom DNS
+                <span class="tooltip" data-tip="DNS khusus untuk bypass internet positif">(?)</span>
+            </label>
             <input id="fc-dns" value="8.8.8.8, 1.1.1.1" />
           </div>
         </div>
@@ -119,7 +135,7 @@
     </main>
     
     <footer>
-      <p>Client-side processing only. Secure & Private.</p>
+      <p>Developer: <strong>Itsbad</strong> &bull; Client-side processing only.</p>
     </footer>
   </div>
 
