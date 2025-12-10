@@ -1,670 +1,109 @@
 <!DOCTYPE html>
-<html lang="id" class="dark">
+<html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FlyClash Converter Override — Itsbad- (Single Page)</title>
-
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: { bg: '#09090b', glass: '#0f1724', primary: '#6366f1' }
-        }
-      }
-    }
-  </script>
-
-  <style>
-    /* Small extra styles */
-    body { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; background:#09090b; color:#e6eef8; }
-    .glass { background: rgba(17,24,39,0.6); border: 1px solid rgba(255,255,255,0.04); }
-    .input-dark { background:#0b1220; border:1px solid #1f2937; color:#e6eef8; padding:8px; border-radius:6px; }
-    .badge { font-size:11px; background:rgba(255,255,255,0.04); padding:4px 8px; border-radius:999px; color:#cbd5e1; }
-    pre { white-space: pre-wrap; }
-    .hidden { display: none !important; }
-    .small { font-size:12px; color:#94a3b8; }
-    .muted { color:#94a3b8; font-size:12px; }
-    .help-btn { color:#94a3b8; cursor:pointer; }
-    .loading-spinner { border: 3px solid rgba(255,255,255,0.06); border-top: 3px solid rgba(99,102,241,0.9); border-radius:50%; width:18px; height:18px; animation:spin 0.9s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    textarea::-webkit-scrollbar { height:8px; width:8px; }
-    textarea::-webkit-scrollbar-thumb { background:#374151; border-radius:6px; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlyClash Converter PRO — Itsbad</title>
+<style>
+body { font-family: Arial, sans-serif; background: #0d1117; color: #e6edf3; padding: 20px; }
+.container { max-width: 900px; margin: auto; background: #161b22; padding: 20px; border-radius: 10px; }
+h1 { text-align: center; }
+label { display: block; margin-top: 15px; font-weight: bold; }
+input, select, textarea { width: 100%; padding: 10px; border-radius: 5px; border: none; margin-top: 5px; background: #0d1117; color: white; }
+button { margin-top: 20px; width: 100%; padding: 12px; border: none; border-radius: 6px; background: #238636; color: white; font-size: 16px; cursor: pointer; }
+.question { cursor: pointer; margin-left: 6px; color: #58a6ff; }
+.popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #161b22; padding: 20px; border-radius: 10px; border: 1px solid #30363d; max-width: 400px; z-index: 1000; }
+.popup button { background: #d52020; margin-top: 10px; }
+.overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 900; }
+.result { white-space: pre; background: #0d1117; padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px solid #30363d; }
+</style>
 </head>
-<body class="min-h-screen p-6">
-
-  <header class="max-w-6xl mx-auto flex justify-between items-center mb-6">
-    <div>
-      <h1 class="text-2xl font-bold flex items-center gap-3"><span class="text-primary">⚡</span> FlyClash Converter Override <span class="ml-2 badge">Itsbad-</span></h1>
-      <div class="muted mt-1">Single page — Generate FlyClash override (.js) & preview YAML/JSON</div>
-    </div>
-    <div class="text-sm muted">v1.0 · <span id="build-time"></span></div>
-  </header>
-
-  <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
-    <!-- LEFT: Controls -->
-    <section class="lg:col-span-5 space-y-6">
-      <!-- Input -->
-      <div class="glass p-4 rounded-xl border-l-4 border-l-primary">
-        <div class="flex justify-between items-center">
-          <div>
-            <label class="text-xs font-bold text-gray-300">1. Paste configs (satu baris tiap link)</label>
-            <div class="small muted">vmess:// | vless:// | trojan:// | ss:// — dukung URI & base64</div>
-          </div>
-          <div class="flex items-center gap-3">
-            <span id="counter" class="badge">0 nodes</span>
-            <button id="import-file" class="text-xs muted hover:text-white">Import .txt</button>
-            <input id="file-input" type="file" accept=".txt" class="hidden"/>
-          </div>
-        </div>
-
-        <textarea id="input-config" class="w-full h-36 mt-3 input-dark font-mono text-sm" placeholder="Paste vmess:// vless:// trojan:// ss:// ..."></textarea>
-        <div class="flex gap-2 mt-2">
-          <button id="analyze-btn" class="flex-1 py-2 bg-primary rounded text-sm font-bold">Analyze</button>
-          <button id="clear-btn" class="py-2 px-3 bg-zinc-800 rounded text-sm">Clear</button>
-        </div>
-
-        <div class="grid grid-cols-3 gap-2 mt-3 small">
-          <div class="p-2 bg-transparent rounded flex flex-col"><span class="muted">VMess</span><span id="count-vmess" class="font-bold">0</span></div>
-          <div class="p-2 bg-transparent rounded flex flex-col"><span class="muted">VLESS</span><span id="count-vless" class="font-bold">0</span></div>
-          <div class="p-2 bg-transparent rounded flex flex-col"><span class="muted">Trojan/SS</span><span id="count-trojan" class="font-bold">0</span></div>
-        </div>
-      </div>
-
-      <!-- Modes -->
-      <div class="glass p-4 rounded-xl">
-        <div class="flex justify-between items-center mb-2">
-          <label class="text-xs font-bold text-gray-300">2. Pilih Mode (bisa banyak)</label>
-          <span class="small muted">Mode aktif: <span id="active-modes-text">Auto Ping</span></span>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div id="btn-url-test" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center active" data-mode="url-test">
-            <div class="flex items-center gap-2"><span>⚡</span><span class="font-bold">Auto Ping</span></div>
-            <button class="help-btn" data-help="auto">?</button>
-          </div>
-
-          <div id="btn-select" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center" data-mode="select">
-            <div class="flex items-center gap-2"><span>⚙️</span><span class="font-bold">Manual</span></div>
-            <button class="help-btn" data-help="manual">?</button>
-          </div>
-
-          <div id="btn-load-balance" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center" data-mode="load-balance">
-            <div class="flex items-center gap-2"><span>🔄</span><span class="font-bold">Load Balance</span></div>
-            <button class="help-btn" data-help="lb">?</button>
-          </div>
-
-          <div id="btn-fallback" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center" data-mode="fallback">
-            <div class="flex items-center gap-2"><span>🛡️</span><span class="font-bold">Fallback</span></div>
-            <button class="help-btn" data-help="fallback">?</button>
-          </div>
-
-          <div id="btn-block-ads" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center" data-mode="block-ads">
-            <div class="flex items-center gap-2"><span>🚫</span><span class="font-bold">Block Ads</span></div>
-            <button class="help-btn" data-help="ads">?</button>
-          </div>
-
-          <div id="btn-custom" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center" data-mode="custom">
-            <div class="flex items-center gap-2"><span>✨</span><span class="font-bold">Custom</span></div>
-            <button class="help-btn" data-help="custom">?</button>
-          </div>
-        </div>
-
-        <div class="mt-3 small muted">Tip: Kombinasikan Mode sesuai kebutuhan (mis. Auto Ping + Block Ads).</div>
-      </div>
-
-      <!-- Settings -->
-      <div class="glass p-4 rounded-xl">
-        <h3 class="text-sm font-bold text-gray-200 mb-2">3. Pengaturan</h3>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="small muted">Interval (s)</label>
-            <input id="interval" class="input-dark mt-1" type="number" min="1" value="5" />
-          </div>
-          <div>
-            <label class="small muted">Nama Grup</label>
-            <input id="group-name" class="input-dark mt-1" type="text" value="FLYCLASH" />
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 mt-3">
-          <div>
-            <label class="small muted">Mixed Port</label>
-            <input id="mixed-port" class="input-dark mt-1" type="number" value="7890" />
-          </div>
-          <div>
-            <label class="small muted">DNS Mode</label>
-            <select id="dns-mode" class="input-dark mt-1" onchange="onDnsModeChange()">
-              <option value="default">Default</option>
-              <option value="preset-cloudflare">Cloudflare (1.1.1.1)</option>
-              <option value="preset-google">Google (8.8.8.8)</option>
-              <option value="preset-quad9">Quad9 (9.9.9.9)</option>
-              <option value="fake-ip">Fake-IP (Anti Bengong)</option>
-              <option value="custom">Custom</option>
-            </select>
-          </div>
-        </div>
-
-        <input id="custom-dns" class="input-dark mt-3 hidden" placeholder="comma separated (e.g. 1.1.1.1, 8.8.8.8)" />
-
-        <div class="grid grid-cols-2 gap-2 mt-3">
-          <label class="check-item p-2 rounded flex items-center justify-between"><div class="flex items-center gap-2"><input id="skip-cert" type="checkbox" checked> <span class="small muted">Skip Cert</span></div></label>
-          <label class="check-item p-2 rounded flex items-center justify-between"><div class="flex items-center gap-2"><input id="block-ads" type="checkbox"> <span class="small muted">Block Ads</span></div></label>
-          <label class="check-item p-2 rounded flex items-center justify-between"><div class="flex items-center gap-2"><input id="top-prio" type="checkbox" checked> <span class="small muted">Top Priority</span></div></label>
-          <label class="check-item p-2 rounded flex items-center justify-between"><div class="flex items-center gap-2"><input id="inject-sosmed" type="checkbox"> <span class="small muted">Inject WA/TT rules</span></div></label>
-          <label class="check-item col-span-2 p-2 rounded"><div class="flex items-center gap-2"><input id="allow-lan" type="checkbox" checked> <span class="small muted">Allow LAN</span></div></label>
-        </div>
-
-        <div class="mt-4">
-          <button id="generate-btn" class="w-full py-3 bg-primary rounded text-sm font-bold flex items-center justify-center gap-3">
-            <span id="gen-loading" class="hidden loading-spinner"></span>
-            <span id="gen-text">Generate Script</span>
-          </button>
-        </div>
-
-      </div>
-
-      <!-- Export options small -->
-      <div class="glass p-3 rounded-xl flex gap-3 items-center">
-        <button id="export-json" class="py-2 px-3 bg-zinc-800 rounded text-sm">Export JSON</button>
-        <button id="export-yaml" class="py-2 px-3 bg-zinc-800 rounded text-sm">Export YAML (preview)</button>
-        <div class="ml-auto muted small">No uploads — local only</div>
-      </div>
-
-    </section>
-
-    <!-- RIGHT: Output -->
-    <section class="lg:col-span-7">
-      <div class="glass rounded-xl overflow-hidden h-[760px] flex flex-col border border-zinc-800">
-        <div class="bg-zinc-900/70 p-3 border-b border-zinc-800 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <span class="font-mono text-sm text-primary">📄 OUTPUT</span>
-            <span id="modes-pill" class="badge">Auto Ping</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <button id="copy-btn" class="py-1 px-3 bg-zinc-800 rounded text-sm">Copy JS</button>
-            <button id="save-btn" class="py-1 px-3 bg-primary rounded text-sm">Save .js</button>
-            <button id="clear-output" class="py-1 px-3 bg-zinc-800 rounded text-sm">Clear</button>
-          </div>
-        </div>
-
-        <textarea id="output-area" class="flex-1 p-4 bg-black/30 text-sm font-mono text-gray-200" readonly>
-/* Output will appear here after you click Generate */
-        </textarea>
-
-        <div class="p-3 border-t border-zinc-800 flex gap-3">
-          <div class="flex-1 small muted">Preview YAML (click Export YAML to save)</div>
-          <div class="text-xs muted">Nodes: <span id="out-nodes">0</span> • Rules: <span id="out-rules">0</span></div>
-        </div>
-
-        <pre id="yaml-preview" class="bg-[#0b1220] text-sm p-4 max-h-64 overflow-auto hidden"></pre>
-
-      </div>
-    </section>
-  </main>
-
-  <!-- Help Modal -->
-  <div id="help-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
-    <div class="bg-[#0b1220] rounded-xl w-full max-w-2xl p-6 border border-zinc-800">
-      <div class="flex justify-between items-start">
-        <div>
-          <h3 id="help-title" class="text-lg font-bold text-primary">Help</h3>
-          <p id="help-desc" class="muted mt-1">Detail</p>
-        </div>
-        <button onclick="closeHelp()" class="bg-zinc-800 px-3 py-2 rounded text-sm">Tutup</button>
-      </div>
-    </div>
-  </div>
-
-  <footer class="max-w-6xl mx-auto mt-8 text-center muted text-sm">
-    Made by Itsbad- · Tidak ada upload ke server · Pastikan FlyClash versi compatible dengan override JS.
-  </footer>
-
-  <!-- SCRIPT: All features -->
-  <script>
-  // Build time
-  document.getElementById('build-time').innerText = new Date().toLocaleString();
-
-  // State
-  const activeModes = new Set(['url-test']); // default auto ping
-  const helpTexts = {
-    auto: {title: 'Auto Ping', body: 'Otomatis mengukur url-test dan memilih node tercepat. Interval dapat diatur.'},
-    manual: {title: 'Manual', body: 'Pilih node secara manual di FlyClash (selector MANUAL).'},
-    lb: {title: 'Load Balance', body: 'Mendistribusikan trafik ke beberapa node sesuai strategi.'},
-    fallback: {title: 'Fallback', body: 'Jika node utama rusak, otomatis berpindah ke cadangan.'},
-    ads: {title: 'Block Ads', body: 'Tambahkan rule pemblokiran iklan. Daftar dipangkas supaya FlyClash tidak bengong.'},
-    custom: {title: 'Custom Mode', body: 'Mode tambahan untuk rule/penyesuaian manual.'}
-  };
-
-  // UI references
-  const inputEl = document.getElementById('input-config');
-  const analyzeBtn = document.getElementById('analyze-btn');
-  const clearBtn = document.getElementById('clear-btn');
-  const counterEl = document.getElementById('counter');
-  const vmCount = document.getElementById('count-vmess');
-  const vlCount = document.getElementById('count-vless');
-  const trCount = document.getElementById('count-trojan');
-  const outputArea = document.getElementById('output-area');
-  const yamlPreview = document.getElementById('yaml-preview');
-
-  // File import
-  document.getElementById('import-file').addEventListener('click', () => document.getElementById('file-input').click());
-  document.getElementById('file-input').addEventListener('change', async (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
-    const txt = await f.text();
-    inputEl.value += (inputEl.value ? '\n' : '') + txt;
-    analyzeConfigs();
-  });
-
-  // Mode buttons toggle
-  document.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.addEventListener('click', (ev) => {
-      if (ev.target && ev.target.dataset && ev.target.dataset.help) return; // help button
-      const mode = btn.dataset.mode;
-      if (activeModes.has(mode)) {
-        if (activeModes.size > 1) { activeModes.delete(mode); btn.classList.remove('active'); }
-      } else { activeModes.add(mode); btn.classList.add('active'); }
-      updateActiveModesText();
-    });
-  });
-
-  // Help buttons
-  document.querySelectorAll('.help-btn').forEach(h => h.addEventListener('click', (ev) => {
-    const key = ev.target.dataset.help;
-    const kmap = {auto:'auto', manual:'manual', lb:'lb', fallback:'fallback', ads:'ads', custom:'custom'};
-    const d = helpTexts[kmap[key] || 'auto'];
-    openHelp(d.title, d.body);
-    ev.stopPropagation();
-  }));
-
-  function updateActiveModesText() {
-    const arr = Array.from(activeModes);
-    document.getElementById('active-modes-text').innerText = arr.map(a => {
-      if (a === 'url-test') return 'Auto Ping';
-      if (a === 'select') return 'Manual';
-      if (a === 'load-balance') return 'LoadBalance';
-      if (a === 'fallback') return 'Fallback';
-      if (a === 'block-ads') return 'BlockAds';
-      return a;
-    }).join(' • ');
-    document.getElementById('modes-pill').innerText = document.getElementById('active-modes-text').innerText;
-  }
-
-  // DNS mode change
-  function onDnsModeChange(){
-    const val = document.getElementById('dns-mode').value;
-    const custom = document.getElementById('custom-dns');
-    if (val === 'custom') custom.classList.remove('hidden'); else custom.classList.add('hidden');
-  }
-  window.onDnsModeChange = onDnsModeChange;
-
-  // Help modal
-  function openHelp(title, body){
-    document.getElementById('help-title').innerText = title;
-    document.getElementById('help-desc').innerText = body;
-    document.getElementById('help-modal').classList.remove('hidden');
-  }
-  function closeHelp(){ document.getElementById('help-modal').classList.add('hidden'); }
-  window.openHelp = openHelp; window.closeHelp = closeHelp;
-
-  // Parse helpers
-  function tryAtob(s){ try { return atob(s); } catch(e){ return null; } }
-  function isBase64(s){ try { return btoa(atob(s)) === s; } catch(e){ return false; } }
-
-  function parseVmess(line, idx) {
-    try {
-      const b = line.replace(/^vmess:\/\//i, '');
-      const dec = b.trim().startsWith('{') ? b : tryAtob(b);
-      if (!dec) return null;
-      const j = JSON.parse(dec);
-      return {
-        name: j.ps || `vmess-${idx}`,
-        type: 'vmess',
-        server: j.add || j.vnext?.[0]?.address || '',
-        port: parseInt(j.port || j.vnext?.[0]?.port || 443),
-        uuid: j.id || j.uuid || '',
-        alterId: parseInt(j.aid || 0),
-        network: j.net || j.network || 'ws',
-        path: j.path || (j.ws && j.ws.path) || '/',
-        host: j.host || (j.ws && j.ws.headers && (j.ws.headers.Host || j.ws.headers.host)) || j.sni || '',
-        tls: j.tls === 'tls' || j.tls === true || false,
-        raw: line
-      };
-    } catch (e) { return null; }
-  }
-
-  function parseVlessOrTrojan(line, idx) {
-    try {
-      const url = new URL(line);
-      const isVless = line.startsWith('vless://');
-      const params = url.searchParams;
-      const obj = {
-        name: decodeURIComponent(url.hash?.slice(1)) || `${isVless ? 'vless' : 'trojan'}-${idx}`,
-        type: isVless ? 'vless' : 'trojan',
-        server: url.hostname,
-        port: parseInt(url.port || 443),
-        uuid: isVless ? url.username : undefined,
-        password: !isVless ? url.username : undefined,
-        network: params.get('type') || params.get('net') || params.get('network') || 'tcp',
-        path: params.get('path') || '/',
-        sni: params.get('sni') || params.get('host') || '',
-        tls: params.get('security') === 'tls' || params.get('security') === 'reality' || false,
-        raw: line
-      };
-      return obj;
-    } catch (e) { return null; }
-  }
-
-  function parseSS(line, idx) {
-    try {
-      // support ss://base64 or ss://method:pass@host:port#name
-      const s = line.replace(/^ss:\/\//i, '');
-      if (s.includes('@') && !s.startsWith('@')) {
-        const hashIdx = s.indexOf('#');
-        const beforeHash = hashIdx === -1 ? s : s.slice(0, hashIdx);
-        const name = hashIdx === -1 ? undefined : decodeURIComponent(s.slice(hashIdx + 1));
-        const at = beforeHash.indexOf('@');
-        const methods = beforeHash.slice(0, at);
-        const hostport = beforeHash.slice(at + 1);
-        const colon = hostport.lastIndexOf(':');
-        const host = colon === -1 ? hostport : hostport.slice(0, colon);
-        const port = colon === -1 ? 8388 : parseInt(hostport.slice(colon + 1), 10);
-        const method = methods.split(':')[0];
-        const password = methods.split(':')[1] || '';
-        return { name: name || `${host}:${port}`, type: 'shadowsocks', server: host, port, cipher: method, password, raw: line };
-      } else {
-        const base = s.split('#')[0];
-        const dec = tryAtob(base);
-        if (!dec) return null;
-        const at = dec.indexOf('@');
-        const methods = dec.slice(0, at);
-        const hostport = dec.slice(at + 1);
-        const colon = hostport.lastIndexOf(':');
-        const host = colon === -1 ? hostport : hostport.slice(0, colon);
-        const port = colon === -1 ? 8388 : parseInt(hostport.slice(colon + 1), 10);
-        const method = methods.split(':')[0];
-        const password = methods.split(':')[1] || '';
-        return { name: s.includes('#') ? decodeURIComponent(s.split('#')[1]) : `${host}:${port}`, type: 'shadowsocks', server: host, port, cipher: method, password, raw: line };
-      }
-    } catch (e) { return null; }
-  }
-
-  function parseAny(line, idx) {
-    if (!line || !line.trim()) return null;
-    const l = line.trim();
-    if (/^vmess:\/\//i.test(l)) return parseVmess(l, idx);
-    if (/^vless:\/\//i.test(l) || /^trojan:\/\//i.test(l)) return parseVlessOrTrojan(l, idx);
-    if (/^ss:\/\//i.test(l)) return parseSS(l, idx);
-    // maybe vmess base64 without prefix
-    if (isBase64(l)) {
-      try { return parseVmess('vmess://' + l, idx); } catch(e) {}
-    }
-    return null;
-  }
-
-  // Analyze
-  function analyzeConfigs() {
-    const lines = inputEl.value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
-    let vm=0, vl=0, tr=0;
-    lines.forEach((l,i) => {
-      const p = parseAny(l, i+1);
-      if (!p) return;
-      if (p.type === 'vmess') vm++;
-      if (p.type === 'vless') vl++;
-      if (p.type === 'trojan' || p.type === 'shadowsocks') tr++;
-    });
-    counterEl.innerText = `${lines.length} nodes`;
-    vmCount.innerText = vm; vlCount.innerText = vl; trCount.innerText = tr;
-    return { total: lines.length, vm, vl, tr };
-  }
-
-  analyzeBtn.addEventListener('click', analyzeConfigs);
-  clearBtn.addEventListener('click', () => { inputEl.value=''; analyzeConfigs(); outputArea.value=''; yamlPreview.classList.add('hidden'); });
-
-  // Generate
-  document.getElementById('generate-btn').addEventListener('click', async () => {
-    try {
-      // loading UI
-      document.getElementById('gen-loading').classList.remove('hidden');
-      document.getElementById('gen-text').innerText = 'Generating...';
-      const res = generateScript();
-      // done
-      document.getElementById('gen-loading').classList.add('hidden');
-      document.getElementById('gen-text').innerText = 'Generate Script';
-      if (res) {
-        outputArea.value = res.js;
-        yamlPreview.textContent = res.yaml;
-        yamlPreview.classList.remove('hidden');
-        document.getElementById('out-nodes').innerText = res.nodes;
-        document.getElementById('out-rules').innerText = res.rules;
-      }
-    } catch (e) {
-      document.getElementById('gen-loading').classList.add('hidden');
-      document.getElementById('gen-text').innerText = 'Generate Script';
-      console.error(e);
-      alert('Error saat generate: ' + (e.message||e));
-    }
-  });
-
-  // Build override & YAML
-  function generateScript() {
-    const lines = inputEl.value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
-    if (lines.length === 0) { alert('Masukkan minimal 1 link konfigurasi.'); return null; }
-
-    const parsed = lines.map((l,i) => parseAny(l, i+1)).filter(Boolean);
-    if (parsed.length === 0) { alert('Tidak ada link valid!'); return null; }
-
-    // options
-    const opts = {
-      modes: Array.from(activeModes),
-      interval: Math.max(1, parseInt(document.getElementById('interval').value || 5)),
-      groupName: document.getElementById('group-name').value || 'FLYCLASH',
-      mixedPort: parseInt(document.getElementById('mixed-port').value || 7890),
-      allowLan: document.getElementById('allow-lan').checked,
-      skipCert: document.getElementById('skip-cert').checked,
-      blockAds: document.getElementById('block-ads').checked,
-      topPrio: document.getElementById('top-prio').checked,
-      injectSosmed: document.getElementById('inject-sosmed').checked,
-      dnsMode: document.getElementById('dns-mode').value,
-      customDns: document.getElementById('custom-dns').value
-    };
-
-    // convert parsed nodes -> clash-friendly objects
-    const clashNodes = parsed.map((p, idx) => {
-      const baseName = p.name || (`NODE-${idx+1}`);
-      if (p.type === 'vmess') {
-        return {
-          name: baseName,
-          type: 'vmess',
-          server: p.server,
-          port: p.port,
-          uuid: p.uuid,
-          alterId: p.alterId || 0,
-          tls: !!p.tls,
-          'skip-cert-verify': opts.skipCert,
-          network: p.network || 'ws',
-          'ws-opts': p.network === 'ws' ? { path: p.path || '/', headers: { Host: p.host || '' } } : undefined
-        };
-      }
-      if (p.type === 'vless') {
-        return {
-          name: baseName,
-          type: 'vless',
-          server: p.server,
-          port: p.port || 443,
-          uuid: p.uuid || '',
-          tls: !!p.tls,
-          'skip-cert-verify': opts.skipCert,
-          servername: p.sni || '',
-          network: p.network || 'ws',
-          'ws-opts': p.network === 'ws' ? { path: p.path || '/', headers: { Host: p.sni || '' } } : undefined
-        };
-      }
-      if (p.type === 'trojan') {
-        return {
-          name: baseName,
-          type: 'trojan',
-          server: p.server,
-          port: p.port || 443,
-          password: p.password || '',
-          tls: true,
-          'skip-cert-verify': opts.skipCert,
-          servername: p.sni || ''
-        };
-      }
-      if (p.type === 'shadowsocks') {
-        return {
-          name: baseName,
-          type: 'shadowsocks',
-          server: p.server,
-          port: p.port,
-          cipher: p.cipher,
-          password: p.password
-        };
-      }
-      return null;
-    }).filter(Boolean);
-
-    // VALIDATION & FIXES to avoid FlyClash bengong
-    const dedupMap = new Map();
-    const nodes = [];
-    for (const n of clashNodes) {
-      const key = `${n.type}|${n.server}|${n.port}`;
-      if (!dedupMap.has(key)) { dedupMap.set(key, true); nodes.push(n); }
-    }
-    if (nodes.length === 0) { alert('Semua node duplikat atau tidak valid.'); return null; }
-    if (nodes.length > 120) { nodes.length = 120; alert('List terlalu panjang; dipangkas ke 120 node untuk stabilitas.'); }
-
-    // Build DNS config snippet
-    let dnsSnippet = 'config.dns = config.dns || {}; config.dns.enable = true; config.dns.nameserver = ["223.5.5.5","8.8.8.8"];';
-    if (opts.dnsMode.startsWith('preset')) {
-      const map = { 'preset-cloudflare': ['1.1.1.1','1.0.0.1'], 'preset-google': ['8.8.8.8','8.8.4.4'], 'preset-quad9': ['9.9.9.9','149.112.112.112'] };
-      dnsSnippet = `config.dns = config.dns || {}; config.dns.enable = true; config.dns.nameserver = ${JSON.stringify(map[opts.dnsMode])};`;
-    } else if (opts.dnsMode === 'fake-ip') {
-      // Fake-ip settings (note: some FlyClash versions may not support fake-ip; warn user)
-      dnsSnippet = `config.dns = { enable: true, \"enhanced-mode\": \"fake-ip\", \"fake-ip-range\": \"198.18.0.1/16\", nameserver: ["8.8.8.8","1.1.1.1"] };`;
-    } else if (opts.dnsMode === 'custom' && opts.customDns.trim()) {
-      const arr = opts.customDns.split(',').map(s => s.trim()).filter(Boolean);
-      dnsSnippet = `config.dns = config.dns || {}; config.dns.enable = true; config.dns.nameserver = ${JSON.stringify(arr)};`;
-    }
-
-    // Build proxy groups based on active modes
-    const pNames = nodes.map(n => n.name);
-    const groups = [];
-    if (opts.modes.includes('url-test')) {
-      groups.push({ name: `${opts.groupName} • AUTO`, type: 'url-test', url: 'https://www.google.com/generate_204', interval: opts.interval, proxies: pNames });
-    }
-    if (opts.modes.includes('load-balance')) {
-      groups.push({ name: `${opts.groupName} • LB`, type: 'load-balance', strategy: 'round-robin', proxies: pNames });
-    }
-    if (opts.modes.includes('fallback')) {
-      groups.push({ name: `${opts.groupName} • FALLBACK`, type: 'fallback', url: 'https://www.google.com/generate_204', interval: opts.interval, proxies: pNames });
-    }
-    if (opts.modes.includes('select')) {
-      groups.push({ name: `${opts.groupName} • MANUAL`, type: 'select', proxies: pNames });
-    }
-    if (groups.length === 0) groups.push({ name: opts.groupName, type: 'select', proxies: pNames });
-
-    // Rules (trimmed)
-    const adRules = opts.blockAds ? [
-      "DOMAIN-SUFFIX,doubleclick.net,REJECT",
-      "DOMAIN-KEYWORD,ads,REJECT"
-    ] : [];
-    if (opts.injectSosmed) {
-      adRules.push(`DOMAIN-SUFFIX,whatsapp.com,${groups[0].name}`);
-      adRules.push(`DOMAIN-SUFFIX,tiktokv.com,${groups[0].name}`);
-    }
-
-    // Build JS override
-    const jsLines = [];
-    jsLines.push('// FlyClash override generated by Itsbad-');
-    jsLines.push(`// Modes: ${opts.modes.join(', ')}`);
-    jsLines.push('function main(config) {');
-    jsLines.push('  config = config || {};');
-    jsLines.push('  config.proxies = config.proxies || [];');
-    jsLines.push('  // Append generated proxies');
-    jsLines.push('  config.proxies.push(' + nodes.map(n => JSON.stringify(n, null, 2)).join(',\n  ') + ');');
-    jsLines.push('');
-    jsLines.push('  // Proxy groups');
-    jsLines.push('  config["proxy-groups"] = config["proxy-groups"] || [];');
-    groups.forEach(g => { jsLines.push('  config["proxy-groups"].push(' + JSON.stringify(g, null, 2) + ');'); });
-    jsLines.push('');
-    jsLines.push(`  config["allow-lan"] = ${!!opts.allowLan};`);
-    jsLines.push(`  config["mixed-port"] = ${Number(opts.mixedPort)};`);
-    jsLines.push('  config.ipv6 = false;');
-    jsLines.push('');
-    jsLines.push('  // DNS Configuration');
-    jsLines.push('  ' + dnsSnippet);
-    jsLines.push('');
-    if (adRules.length) {
-      jsLines.push('  config.rules = config.rules || [];');
-      adRules.forEach(r => jsLines.push('  config.rules.push(' + JSON.stringify(r) + ');'));
-    }
-    jsLines.push('');
-    jsLines.push('  // Try inject into existing selectors (safe, non-destructive)');
-    jsLines.push('  try { (config["proxy-groups"]||[]).forEach(g => { if (g.type === "select" && !g.proxies.includes("' + groups[0].name + '")) g.proxies.push("' + groups[0].name + '"); }); } catch(e){}');
-    jsLines.push('');
-    jsLines.push('  return config;');
-    jsLines.push('}');
-
-    const finalJS = jsLines.join('\n');
-
-    // YAML preview minimal
-    const yaml = [
-      `port: ${opts.mixedPort}`,
-      `allow-lan: ${opts.allowLan}`,
-      `dns:`,
-      `  enable: true`,
-      `  nameserver: ${JSON.stringify((opts.dnsMode.startsWith('preset') ? (opts.dnsMode === 'preset-google' ? ['8.8.8.8'] : (opts.dnsMode === 'preset-quad9' ? ['9.9.9.9'] : ['1.1.1.1'])) : (opts.dnsMode==='custom' ? (opts.customDns.split(',').map(s=>s.trim())) : ['223.5.5.5','8.8.8.8'])))}`,
-      `proxies:`,
-      ...nodes.map(n => `  - name: "${n.name}"\n    type: ${n.type}\n    server: ${n.server}\n    port: ${n.port}`),
-      `proxy-groups:`,
-      ...groups.map(g => `  - name: "${g.name}"\n    type: ${g.type}\n    proxies: [${g.proxies.map(p=>`"${p}"`).join(', ')}]`)
-    ].join('\n');
-
-    // Return results
-    return { js: finalJS, yaml, nodes: nodes.length, rules: adRules.length };
-  }
-
-  // Copy & Save handlers
-  document.getElementById('copy-btn').addEventListener('click', () => {
-    outputArea.select(); document.execCommand('copy'); alert('Override JS disalin ke clipboard.');
-  });
-  document.getElementById('save-btn').addEventListener('click', () => {
-    const txt = outputArea.value;
-    if (!txt) { alert('Belum ada output.'); return; }
-    const a = document.createElement('a'); const blob = new Blob([txt], { type:'application/javascript' });
-    a.href = URL.createObjectURL(blob); a.download = 'flyclash-override.js'; a.click();
-  });
-  document.getElementById('clear-output').addEventListener('click', () => { outputArea.value=''; yamlPreview.classList.add('hidden'); });
-
-  // Export JSON / YAML
-  document.getElementById('export-json').addEventListener('click', () => {
-    const txt = outputArea.value; if (!txt) return alert('Generate dulu');
-    const jsonObj = { override: txt }; downloadBlob(JSON.stringify(jsonObj, null, 2), 'flyclash-override.json', 'application/json');
-  });
-  document.getElementById('export-yaml').addEventListener('click', () => {
-    const yaml = yamlPreview.textContent; if (!yaml) return alert('Generate dulu'); downloadBlob(yaml, 'clash-preview.yaml', 'text/yaml');
-  });
-
-  function downloadBlob(content, filename, mime) {
-    const a = document.createElement('a'); const blob = new Blob([content], { type: mime });
-    a.href = URL.createObjectURL(blob); a.download = filename; a.click();
-  }
-
-  // Simple UX: update activeModes text on load
-  updateActiveModesText();
-
-  // initial analyze if any content
-  analyzeConfigs();
-
-  </script>
-
+<body>
+<div class="container">
+<h1>FlyClash Converter PRO — Itsbad</h1>
+
+<label>Masukkan Akun V2Ray/VLESS</label>
+<textarea id="inputConfig" rows="5" placeholder="Paste akun V2Ray/VLESS di sini..."></textarea>
+
+<label>Mode Koneksi <span class="question" onclick="showPopup('mode')">?</span></label>
+<select id="mode">
+<option value="bestping">Best Ping</option>
+<option value="loadbalance">Load Balance</option>
+<option value="manual">Manual</option>
+</select>
+
+<label>DNS Mode <span class="question" onclick="showPopup('dns')">?</span></label>
+<select id="dnsMode">
+<option value="fakeip">Fake-IP (Default)</option>
+<option value="dns">DNS Normal</option>
+<option value="custom">Custom DNS</option>
+</select>
+
+<label>Custom DNS (jika dipilih)</label>
+<input id="dnsCustom" placeholder="1.1.1.1, 1.0.0.1" />
+
+<h3>FlyClash System Settings (Auto Apply)</h3>
+<ul>
+<li>Always Reconnect</li>
+<li>WakeLock ON</li>
+<li>MTU: 1500</li>
+<li>UDPGW: 7300</li>
+<li>HTTP Proxy Port: 8800</li>
+<li>SOCKS5 Port: 3080</li>
+<li>DNS Local Port: 7200</li>
+<li>DNS Primary: 1.1.1.1</li>
+<li>DNS Secondary: 1.0.0.1</li>
+<li>Ping Interval: 1000ms</li>
+<li>Timeout: 3000ms</li>
+<li>Auto Reconnect: 3x</li>
+</ul>
+
+<button onclick="generateConfig()">Generate FlyClash Script</button>
+
+<div id="result" class="result"></div>
+</div>
+
+<div id="overlay" class="overlay"></div>
+<div id="popup" class="popup">
+<div id="popupText"></div>
+<button onclick="closePopup()">Tutup</button>
+</div>
+
+<script>
+function showPopup(type){
+ let text = {
+  mode: "Best Ping = memilih server tercepat otomatis.\nLoad Balance = membagi trafik ke semua server.\nManual = pilih server tertentu.",
+  dns: "Fake-IP = kompitibel & cepat.\nDNS Normal = tanpa Fake-IP.\nCustom = masukkan DNS sendiri."
+ }[type];
+ document.getElementById('popupText').innerText = text;
+ document.getElementById('popup').style.display = 'block';
+ document.getElementById('overlay').style.display = 'block';
+}
+function closePopup(){
+ document.getElementById('popup').style.display = 'none';
+ document.getElementById('overlay').style.display = 'none';
+}
+
+function generateConfig(){
+ let input = document.getElementById('inputConfig').value.trim().split("\n");
+ let mode = document.getElementById('mode').value;
+ let dnsMode = document.getElementById('dnsMode').value;
+ let dnsCustom = document.getElementById('dnsCustom').value;
+
+ let dnsBlock = dnsMode === 'custom' ? dnsCustom : dnsMode;
+
+ let output = "# FlyClash Config — Generated by Itsbad\n";
+ output += `mode: ${mode}\n`;
+ output += `dns_mode: ${dnsBlock}\n`;
+ output += `system: { mtu:1500, udpgw:7300, wakelock:true, always_reconnect:true, http_port:8800, socks_port:3080, dns_local:7200, interval:1000, timeout:3000, autoreconnect:3 }\n`;
+
+ output += "proxies:\n";
+ input.forEach((line, i)=>{
+  if(line.trim() !== "") output += `  - name: server${i+1}\n    link: "${line.trim()}"\n`;
+ });
+
+ document.getElementById('result').innerText = output;
+}
+</script>
 </body>
 </html>
