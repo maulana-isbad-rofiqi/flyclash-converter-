@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlyClash Converter Pro</title>
+    <title>FlyClash Converter Pro (Anti-Bengong)</title>
     
-    <link rel="stylesheet" href="style.css">
-
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -21,7 +19,6 @@
                     colors: {
                         background: '#09090b',
                         surface: '#18181b',
-                        surface2: '#27272a',
                         primary: '#6366f1', 
                         accent: '#8b5cf6',
                     },
@@ -33,11 +30,266 @@
             }
         }
     </script>
+
+    <style>
+        /* CSS GABUNGAN */
+        body { background-color: #09090b; color: #e4e4e7; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(39, 39, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
+        .input-dark { background: #09090b; border: 1px solid #3f3f46; color: #f4f4f5; }
+        .input-dark:focus { border-color: #6366f1; outline: none; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #18181b; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+    </style>
 </head>
 <body class="min-h-screen p-4 md:p-8">
 
     <div id="root"></div>
 
-    <script type="text/babel" src="script.js"></script>
+    <script type="text/babel">
+        // SCRIPT GABUNGAN (LOGIC + UI)
+        const { useState, useEffect } = React;
+        const { Zap, Shield, Globe, Copy, Download, Code, Settings, Play, RefreshCw, CheckCircle, Server } = lucide;
+
+        // --- CONFIG PARSER ---
+        const parseConfig = (line, index) => {
+            try {
+                if (line.startsWith("vmess://")) {
+                    const b64 = line.replace("vmess://", "");
+                    const conf = JSON.parse(atob(b64));
+                    return {
+                        name: conf.ps || `VMess-${index}`,
+                        type: "vmess",
+                        server: conf.add,
+                        port: parseInt(conf.port),
+                        uuid: conf.id,
+                        alterId: parseInt(conf.aid || 0),
+                        cipher: "auto",
+                        tls: conf.tls === "tls",
+                        servername: conf.host || conf.sni || "",
+                        network: conf.net || "ws",
+                        "ws-opts": conf.net === "ws" ? { path: conf.path || "/", headers: { Host: conf.host || "" } } : undefined
+                    };
+                } else if (line.startsWith("vless://") || line.startsWith("trojan://")) {
+                    const url = new URL(line);
+                    const isVless = line.startsWith("vless://");
+                    const params = url.searchParams;
+                    return {
+                        name: decodeURIComponent(url.hash.slice(1)) || `${isVless ? 'VLESS' : 'Trojan'}-${index}`,
+                        type: isVless ? "vless" : "trojan",
+                        server: url.hostname,
+                        port: parseInt(url.port),
+                        uuid: url.username,
+                        password: isVless ? undefined : url.username,
+                        tls: params.get("security") === "tls" || params.get("security") === "reality",
+                        servername: params.get("sni") || "",
+                        network: params.get("type") || "tcp",
+                        "ws-opts": params.get("type") === "ws" ? { path: params.get("path") || "/", headers: { Host: params.get("host") || "" } } : undefined
+                    };
+                }
+                return null;
+            } catch (e) { return null; }
+        };
+
+        const App = () => {
+            // STATE
+            const [input, setInput] = useState("");
+            const [outputJS, setOutputJS] = useState("");
+            const [outputYAML, setOutputYAML] = useState("");
+            const [nodesCount, setNodesCount] = useState(0);
+            
+            const [mode, setMode] = useState("url-test");
+            const [interval, setIntervalVal] = useState(300);
+            const [groupName, setGroupName] = useState("AUTO BEST PING");
+            
+            // DNS & Toggles
+            const [dnsMode, setDnsMode] = useState("default"); // default, fake-ip, custom
+            const [customDnsIP, setCustomDnsIP] = useState("8.8.8.8, 1.1.1.1");
+            const [skipCert, setSkipCert] = useState(true);
+            const [adblock, setAdblock] = useState(false);
+            const [autoInsert, setAutoInsert] = useState(true);
+
+            useEffect(() => {
+                if(mode === 'url-test') setGroupName("AUTO BEST PING");
+                if(mode === 'load-balance') setGroupName("LOAD BALANCE");
+                if(mode === 'fallback') setGroupName("FALLBACK");
+                if(mode === 'select') setGroupName("MANUAL SELECT");
+            }, [mode]);
+
+            // GENERATE LOGIC
+            const generate = () => {
+                const lines = input.split('\n').filter(l => l.trim().length > 5);
+                const nodes = lines.map((l, i) => parseConfig(l.trim(), i)).filter(n => n !== null);
+                setNodesCount(nodes.length);
+
+                if (nodes.length === 0) {
+                    setOutputJS("// Tidak ada config valid.");
+                    return;
+                }
+
+                nodes.forEach(n => {
+                    if (skipCert) n['skip-cert-verify'] = true;
+                    n.udp = true;
+                });
+                const nodesJson = JSON.stringify(nodes, null, 2);
+
+                // DNS ANTI-BENGONG
+                let dnsConfig = "";
+                if (dnsMode === "default") {
+                    dnsConfig = "// DNS: Default (No Override)";
+                } else if (dnsMode === "fake-ip") {
+                    dnsConfig = `
+    config.dns = {
+        "enable": true,
+        "ipv6": false,
+        "listen": "0.0.0.0:1053",
+        "enhanced-mode": "fake-ip",
+        "fake-ip-range": "198.18.0.1/16",
+        "fake-ip-filter": ["*.lan", "*.local", "time.*.com", "wpad.+"],
+        "default-nameserver": ["8.8.8.8", "1.1.1.1"],
+        "nameserver": ["https://dns.google/dns-query", "https://1.1.1.1/dns-query"],
+        "fallback": ["https://doh.pub/dns-query", "8.8.8.8"],
+        "fallback-filter": { "geoip": true, "ipcidr": ["240.0.0.0/4"] }
+    };`;
+                } else {
+                    const dnsList = JSON.stringify(customDnsIP.split(',').map(d => d.trim()));
+                    dnsConfig = `
+    if (!config.dns) config.dns = {};
+    config.dns.nameserver = ${dnsList};`;
+                }
+
+                // RULES
+                let rulesInject = "";
+                if (adblock) {
+                    rulesInject = `
+    const rules = ["DOMAIN-KEYWORD,ads,REJECT", "DOMAIN-SUFFIX,doubleclick.net,REJECT"];
+    config.rules = rules.concat(config.rules || []);`;
+                }
+
+                const script = `// FlyClash Override Generated
+// Created: ${new Date().toLocaleString()}
+
+function main(config) {
+    const proxies = ${nodesJson};
+    config.proxies = (config.proxies || []).concat(proxies);
+    
+    const group = {
+        "name": "${groupName}",
+        "type": "${mode}",
+        "url": "http://www.gstatic.com/generate_204",
+        "interval": ${interval},
+        "proxies": proxies.map(p => p.name)
+    };
+    
+    if (!config['proxy-groups']) config['proxy-groups'] = [];
+    ${autoInsert ? "config['proxy-groups'].unshift(group);" : "config['proxy-groups'].push(group);"}
+
+    // DNS & Rules
+    ${dnsConfig}
+    ${rulesInject}
+
+    config['proxy-groups'].forEach(g => {
+        if (g.type === 'select' && g.name !== "${groupName}") g.proxies.push("${groupName}");
+    });
+
+    return config;
+}`;
+                setOutputJS(script);
+                setOutputYAML(`proxies:\n${nodes.map(n => `  - { name: ${n.name}, type: ${n.type}, server: ${n.server} }`).join('\n')}`);
+            };
+
+            const copyToClipboard = (text) => { navigator.clipboard.writeText(text); alert("Copied!"); };
+            
+            const downloadFile = (content) => {
+                const blob = new Blob([content], { type: "text/javascript" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url; a.download = 'override.js'; a.click();
+            };
+
+            return (
+                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div className="lg:col-span-12">
+                        <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent flex items-center gap-2">
+                            <Zap className="text-primary fill-current" /> FlyClash Converter <span className="text-xs border border-primary px-2 py-0.5 rounded text-primary">PRO</span>
+                        </h1>
+                    </div>
+
+                    <div className="lg:col-span-5 space-y-6">
+                        <div className="glass p-5 rounded-xl border-l-4 border-l-primary">
+                            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 block">Input Config</label>
+                            <textarea value={input} onChange={(e) => setInput(e.target.value)} className="w-full h-48 bg-background border border-zinc-700 rounded-lg p-3 text-xs font-mono text-zinc-300 focus:border-primary focus:outline-none resize-none" placeholder="Paste link vmess/vless/trojan..."></textarea>
+                            <div className="flex justify-between items-center mt-3">
+                                <span className="text-xs text-zinc-500">{nodesCount} nodes</span>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setInput("")} className="px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 rounded-md">Clear</button>
+                                    <button onClick={generate} className="px-4 py-1.5 bg-primary hover:bg-indigo-500 text-white text-xs font-bold rounded-md flex items-center gap-2"><Play size={14}/> Generate</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            {[
+                                {id: 'url-test', icon: Zap, label: 'Auto Ping'},
+                                {id: 'select', icon: Settings, label: 'Manual'},
+                                {id: 'load-balance', icon: RefreshCw, label: 'Load Balance'},
+                                {id: 'fallback', icon: CheckCircle, label: 'Fallback'}
+                            ].map((m) => (
+                                <button key={m.id} onClick={() => setMode(m.id)} className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${mode === m.id ? 'bg-primary/20 border-primary text-white' : 'glass border-transparent text-zinc-400 hover:bg-zinc-800'}`}>
+                                    <m.icon size={20} /> <span className="text-xs font-medium">{m.label}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="glass p-5 rounded-xl space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div><label className="text-xs text-zinc-500 mb-1 block">Interval (s)</label><input type="number" value={interval} onChange={(e) => setIntervalVal(e.target.value)} className="w-full input-dark rounded-md p-2 text-sm" /></div>
+                                <div><label className="text-xs text-zinc-500 mb-1 block">Group Name</label><input type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)} className="w-full input-dark rounded-md p-2 text-sm" /></div>
+                            </div>
+                            <div>
+                                <label className="text-xs text-zinc-500 mb-1 flex items-center gap-2"><Server size={12}/> DNS Strategy</label>
+                                <select value={dnsMode} onChange={(e) => setDnsMode(e.target.value)} className="w-full input-dark rounded-md p-2 text-sm mb-2 cursor-pointer">
+                                    <option value="default">Default (Aman - No Override)</option>
+                                    <option value="fake-ip">⚡ Anti-Bengong (Fake-IP)</option>
+                                    <option value="custom">Custom IP Manual</option>
+                                </select>
+                                {dnsMode === 'custom' && (<input type="text" value={customDnsIP} onChange={(e) => setCustomDnsIP(e.target.value)} className="w-full input-dark rounded-md p-2 text-sm" />)}
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 pt-2">
+                                <label className="flex items-center gap-2 p-2 rounded bg-zinc-800/50 cursor-pointer border border-zinc-700/50 hover:border-zinc-500"><input type="checkbox" checked={skipCert} onChange={() => setSkipCert(!skipCert)} className="accent-primary" /><span className="text-xs text-zinc-300">Skip Cert</span></label>
+                                <label className="flex items-center gap-2 p-2 rounded bg-zinc-800/50 cursor-pointer border border-zinc-700/50 hover:border-zinc-500"><input type="checkbox" checked={adblock} onChange={() => setAdblock(!adblock)} className="accent-primary" /><span className="text-xs text-zinc-300">Adblock</span></label>
+                                <label className="flex items-center gap-2 p-2 rounded bg-zinc-800/50 cursor-pointer border border-zinc-700/50 hover:border-zinc-500"><input type="checkbox" checked={autoInsert} onChange={() => setAutoInsert(!autoInsert)} className="accent-primary" /><span className="text-xs text-zinc-300">Top Insert</span></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="lg:col-span-7 flex flex-col gap-6">
+                        <div className="glass flex flex-col rounded-xl overflow-hidden h-[600px] border border-zinc-800">
+                            <div className="bg-zinc-900/80 p-3 border-b border-zinc-800 flex justify-between items-center backdrop-blur-sm">
+                                <span className="text-xs font-mono text-primary flex items-center gap-2"><Code size={14}/> Result - JS Override</span>
+                                <div className="flex gap-2">
+                                    <button onClick={() => copyToClipboard(outputJS)} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1 rounded flex items-center gap-1"><Copy size={12}/> Copy</button>
+                                    <button onClick={() => downloadFile(outputJS)} className="text-xs bg-primary hover:bg-indigo-600 text-white px-3 py-1 rounded flex items-center gap-1"><Download size={12}/> Save JS</button>
+                                </div>
+                            </div>
+                            <div className="flex-1 bg-[#0d0d10] p-4 overflow-auto font-mono text-xs leading-relaxed">
+                                <pre className="text-zinc-400 whitespace-pre-wrap">{outputJS || "// Hasil script akan muncul di sini..."}</pre>
+                            </div>
+                        </div>
+                        <div className="glass rounded-xl overflow-hidden border border-zinc-800">
+                             <div className="bg-zinc-900/80 p-2 border-b border-zinc-800"><span className="text-xs font-mono text-zinc-400 px-2">Structure Preview</span></div>
+                             <div className="bg-[#0d0d10] p-3 overflow-auto max-h-32 font-mono text-[10px] text-zinc-500"><pre>{outputYAML || "..."}</pre></div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+        lucide.createIcons();
+    </script>
 </body>
 </html>
