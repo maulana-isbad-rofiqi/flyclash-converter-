@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>FlyClash Converter PRO</title>
+  
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/644/644667.png" type="image/png">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,11 +35,11 @@
       <section class="card input-section">
         <div class="card-header">
           <h2><i data-lucide="server" width="18"></i> Input Config</h2>
-          <button class="info-btn" data-key="input"><i data-lucide="help-circle" width="14"></i></button>
+          <button class="info-btn" data-key="input"><i data-lucide="help-circle" width="16"></i></button>
         </div>
         
         <div class="input-wrapper">
-          <textarea id="fc-input" placeholder="Tempel link vmess:// vless:// trojan:// ss:// di sini..."></textarea>
+          <textarea id="fc-input" placeholder="Tempel link vmess:// vless:// trojan:// ss:// di sini... (Satu link per baris)"></textarea>
           <div class="input-actions">
             <button id="fc-clear" class="btn btn-ghost"><i data-lucide="trash-2" width="16"></i></button>
             <button id="fc-validate" class="btn btn-ghost">Check</button>
@@ -58,6 +59,7 @@
                 <option value="manual">👆 Manual Select (Pilih Sendiri)</option>
                 <option value="loadbalance">⚖️ Load Balance (Gabung Speed)</option>
                 <option value="fallback">🛡️ Failover (Cadangan Otomatis)</option>
+                <option value="hybrid" style="font-weight:bold; color:#06b6d4">🔥 Hybrid (Auto + Manual + Fallback)</option>
               </select>
             </div>
           </div>
