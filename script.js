@@ -1,568 +1,339 @@
-/* ===========================================================
-   FlyClash Converter PRO - Developer: Itsbad
-   =========================================================== */
+const { useState, useEffect } = React;
+const { Zap, Shield, Globe, Copy, Download, Code, Settings, Play, RefreshCw, CheckCircle, Server } = lucide;
 
-// Utility Selectors
-const $ = (selector) => document.querySelector(selector);
-const $$ = (selector) => document.querySelectorAll(selector);
-
-// --- Data Penjelasan (Pop-up Content) ---
-const explanations = {
-    input: `
-        <strong>Input Config</strong><br>
-        Tempel (Paste) konfigurasi akun V2Ray Anda di sini.<br><br>
-        Mendukung format:
-        <ul style="margin-left:20px; margin-top:5px; list-style-type:disc">
-            <li>VMess (vmess://...)</li>
-            <li>VLESS (vless://...)</li>
-            <li>Trojan (trojan://...)</li>
-            <li>Shadowsocks (ss://...)</li>
-        </ul>
-        <br><i>Tips: Bisa paste banyak akun sekaligus.</i>
-    `,
-    mode: `
-        <strong>Mode Strategy</strong><br>
-        Menentukan bagaimana FlyClash memilih akun:<br><br>
-        1. <strong>🚀 Auto Best Ping:</strong> Otomatis pilih yang tercepat.<br>
-        2. <strong>👆 Manual:</strong> Pilih sendiri secara manual.<br>
-        3. <strong>⚖️ Load Balance:</strong> Menggabungkan speed semua akun.<br>
-        4. <strong>🛡️ Failover:</strong> Akun cadangan otomatis jika akun utama mati.<br>
-        5. <strong>🔥 Hybrid:</strong> Membuat 3 grup sekaligus (Auto, Manual, & Fallback).
-    `,
-    interval: `
-        <strong>Interval (Detik)</strong><br>
-        Seberapa sering aplikasi mengecek ping ke server. Semakin kecil angka, semakin cepat deteksi akun mati.
-    `,
-    group: `
-        <strong>Group Name</strong><br>
-        Nama grup proxy yang akan muncul di menu utama FlyClash.
-    `,
-    skipcert: `
-        <strong>Skip Certificate</strong><br>
-        Jika ON, aplikasi akan mengabaikan error SSL/TLS. Wajib ON untuk akun gratisan.
-    `,
-    adblock: `
-        <strong>AdBlock</strong><br>
-        Memasukkan rules untuk memblokir iklan (Google Ads, DoubleClick) secara otomatis.
-    `,
-    autoinsert: `
-        <strong>Auto Insert</strong><br>
-        Otomatis menyuntikkan grup ini ke dalam grup 'Proxy' atau 'Select' bawaan FlyClash.
-    `,
-    weights: `
-        <strong>Load Balance Weights</strong><br>
-        Mengatur pembagian trafik. Contoh: "50,20" (Akun 1 dapat 50%, Akun 2 dapat 20%). Kosongkan untuk bagi rata.
-    `,
-    dns: `
-        <strong>Custom DNS</strong><br>
-        Menggunakan DNS khusus (Google/Cloudflare) untuk membuka situs yang diblokir.
-    `
+// --- 1. CONFIG PARSER ---
+const parseConfig = (line, index) => {
+    try {
+        if (line.startsWith("vmess://")) {
+            const b64 = line.replace("vmess://", "");
+            const conf = JSON.parse(atob(b64));
+            return {
+                name: conf.ps || `VMess-${index}`,
+                type: "vmess",
+                server: conf.add,
+                port: parseInt(conf.port),
+                uuid: conf.id,
+                alterId: parseInt(conf.aid || 0),
+                cipher: "auto",
+                tls: conf.tls === "tls",
+                servername: conf.host || conf.sni || "",
+                network: conf.net || "ws",
+                "ws-opts": conf.net === "ws" ? { path: conf.path || "/", headers: { Host: conf.host || "" } } : undefined
+            };
+        } else if (line.startsWith("vless://") || line.startsWith("trojan://")) {
+            const url = new URL(line);
+            const isVless = line.startsWith("vless://");
+            const params = url.searchParams;
+            return {
+                name: decodeURIComponent(url.hash.slice(1)) || `${isVless ? 'VLESS' : 'Trojan'}-${index}`,
+                type: isVless ? "vless" : "trojan",
+                server: url.hostname,
+                port: parseInt(url.port),
+                uuid: url.username,
+                password: isVless ? undefined : url.username,
+                tls: params.get("security") === "tls" || params.get("security") === "reality",
+                servername: params.get("sni") || "",
+                network: params.get("type") || "tcp",
+                "ws-opts": params.get("type") === "ws" ? { path: params.get("path") || "/", headers: { Host: params.get("host") || "" } } : undefined
+            };
+        }
+        return null;
+    } catch (e) { return null; }
 };
 
-// --- Utilities Helper ---
-const downloadText = (filename, content, type = 'text/plain') => {
-    const a = document.createElement('a');
-    const url = URL.createObjectURL(new Blob([content], { type }));
-    a.href = url; 
-    a.download = filename;
-    document.body.appendChild(a); 
-    a.click();
-    document.body.removeChild(a); 
-    URL.revokeObjectURL(url);
-};
+// --- 2. MAIN APP COMPONENT ---
+const App = () => {
+    // Input & Output State
+    const [input, setInput] = useState("");
+    const [outputJS, setOutputJS] = useState("");
+    const [outputYAML, setOutputYAML] = useState("");
+    const [nodesCount, setNodesCount] = useState(0);
+    
+    // Configuration State
+    const [mode, setMode] = useState("url-test");
+    const [interval, setIntervalVal] = useState(300);
+    const [groupName, setGroupName] = useState("AUTO BEST PING");
+    
+    // DNS New State (Anti-Bengong)
+    const [dnsMode, setDnsMode] = useState("default"); // default, fake-ip, custom
+    const [customDnsIP, setCustomDnsIP] = useState("8.8.8.8, 1.1.1.1");
+    
+    // Toggles
+    const [skipCert, setSkipCert] = useState(true);
+    const [adblock, setAdblock] = useState(false);
+    const [autoInsert, setAutoInsert] = useState(true);
 
-const tryAtob = (str) => {
-    try { return atob(str); } catch (e) { return null; }
-};
+    // Auto update Group Name
+    useEffect(() => {
+        if(mode === 'url-test') setGroupName("AUTO BEST PING");
+        if(mode === 'load-balance') setGroupName("LOAD BALANCE");
+        if(mode === 'fallback') setGroupName("FALLBACK");
+        if(mode === 'select') setGroupName("MANUAL SELECT");
+    }, [mode]);
 
-// --- Fungsi Parsing (Menerjemahkan Link) ---
+    // --- GENERATOR LOGIC ---
+    const generate = () => {
+        const lines = input.split('\n').filter(l => l.trim().length > 5);
+        const nodes = lines.map((l, i) => parseConfig(l.trim(), i)).filter(n => n !== null);
+        setNodesCount(nodes.length);
 
-function parseQuery(queryString) {
-    const query = {};
-    if (!queryString) return query;
-    const pairs = queryString.split('&');
-    for (const pair of pairs) {
-        const [key, value] = pair.split('=');
-        if (key) query[decodeURIComponent(key)] = decodeURIComponent(value || '');
-    }
-    return query;
-}
-
-function parseVLESS(raw) {
-    try {
-        const s = raw.replace(/^vless:\/\//i, '');
-        const hashIndex = s.indexOf('#');
-        const name = hashIndex === -1 ? undefined : decodeURIComponent(s.slice(hashIndex + 1));
-        const urlPart = hashIndex === -1 ? s : s.slice(0, hashIndex);
-        
-        const qIndex = urlPart.indexOf('?');
-        const qStr = qIndex === -1 ? '' : urlPart.slice(qIndex + 1);
-        const mainPart = qIndex === -1 ? urlPart : urlPart.slice(0, qIndex);
-        
-        const query = parseQuery(qStr);
-        const atIndex = mainPart.indexOf('@');
-        const uuid = atIndex === -1 ? '' : mainPart.slice(0, atIndex);
-        const hostPort = atIndex === -1 ? mainPart : mainPart.slice(atIndex + 1);
-        
-        const colonIndex = hostPort.lastIndexOf(':');
-        const host = colonIndex === -1 ? hostPort : hostPort.slice(0, colonIndex);
-        const port = colonIndex === -1 ? 443 : parseInt(hostPort.slice(colonIndex + 1), 10);
-
-        return {
-            proto: 'vless',
-            type: 'vless',
-            name: (name || uuid || `${host}:${port}`) + '-' + Math.random().toString(36).slice(2, 6),
-            uuid: uuid,
-            host: host,
-            port: port,
-            network: query.type || 'ws',
-            path: query.path || '/',
-            sni: query.sni || query.host || host,
-            security: query.security || 'tls',
-            raw: raw
-        };
-    } catch (e) { return { error: true }; }
-}
-
-function parseVMess(raw) {
-    try {
-        const s = raw.replace(/^vmess:\/\//i, '');
-        let config = null;
-        
-        if (s.trim().startsWith('{')) {
-            config = JSON.parse(s);
-        } else {
-            const decoded = tryAtob(s);
-            if (!decoded) return { error: true };
-            config = JSON.parse(decoded);
+        if (nodes.length === 0) {
+            setOutputJS("// Tidak ada config valid yang ditemukan.");
+            return;
         }
 
-        const server = config.add || (config.vnext && config.vnext[0] && config.vnext[0].address) || '';
-        const port = parseInt(config.port || 443, 10);
-        
-        return {
-            proto: 'vmess',
-            type: 'vmess',
-            name: (config.ps || `${server}:${port}`) + '-' + Math.random().toString(36).slice(2, 6),
-            server: server,
-            port: port,
-            uuid: config.id || '',
-            network: config.net || 'tcp',
-            path: config.path || '/',
-            host: config.host || config.sni || server,
-            tls: config.tls === 'tls' || config.tls === true
-        };
-    } catch (e) { return { error: true }; }
-}
+        // 1. Process Nodes
+        nodes.forEach(n => {
+            if (skipCert) n['skip-cert-verify'] = true;
+            n.udp = true;
+        });
+        const nodesJson = JSON.stringify(nodes, null, 2);
 
-function parseTrojan(raw) {
-    try {
-        const s = raw.replace(/^trojan:\/\//i, '');
-        const hashIndex = s.indexOf('#');
-        const name = hashIndex === -1 ? undefined : decodeURIComponent(s.slice(hashIndex + 1));
-        const urlPart = hashIndex === -1 ? s : s.slice(0, hashIndex);
-        
-        const qIndex = urlPart.indexOf('?');
-        const qStr = qIndex === -1 ? '' : urlPart.slice(qIndex + 1);
-        const mainPart = qIndex === -1 ? urlPart : urlPart.slice(0, qIndex);
-        
-        const query = parseQuery(qStr);
-        const atIndex = mainPart.indexOf('@');
-        const password = atIndex === -1 ? '' : mainPart.slice(0, atIndex);
-        const hostPort = atIndex === -1 ? mainPart : mainPart.slice(atIndex + 1);
-        
-        const colonIndex = hostPort.lastIndexOf(':');
-        const host = colonIndex === -1 ? hostPort : hostPort.slice(0, colonIndex);
-        const port = colonIndex === -1 ? 443 : parseInt(hostPort.slice(colonIndex + 1), 10);
-
-        return {
-            proto: 'trojan',
-            type: 'trojan',
-            name: (name || `${host}:${port}`) + '-' + Math.random().toString(36).slice(2, 6),
-            password: password,
-            host: host,
-            port: port,
-            sni: query.sni || host
-        };
-    } catch (e) { return { error: true }; }
-}
-
-function parseSS(raw) {
-    try {
-        const s = raw.replace(/^ss:\/\//i, '');
-        let name, server, port, cipher, password;
-
-        if (s.includes('@') && !s.startsWith('@')) {
-            // Format Baru: method:pass@server:port
-            const hashIndex = s.indexOf('#');
-            name = hashIndex === -1 ? undefined : decodeURIComponent(s.slice(hashIndex + 1));
-            const urlPart = hashIndex === -1 ? s : s.slice(0, hashIndex);
-            
-            const atIndex = urlPart.indexOf('@');
-            const methods = urlPart.slice(0, atIndex);
-            const hostPort = urlPart.slice(atIndex + 1);
-            
-            const colonIndex = hostPort.lastIndexOf(':');
-            server = colonIndex === -1 ? hostPort : hostPort.slice(0, colonIndex);
-            port = colonIndex === -1 ? 8388 : parseInt(hostPort.slice(colonIndex + 1), 10);
-            
-            cipher = methods.split(':')[0];
-            password = methods.split(':')[1] || '';
+        // 2. Process DNS (ANTI-BENGONG LOGIC)
+        let dnsConfig = "";
+        if (dnsMode === "default") {
+            dnsConfig = "// DNS: Default (Mengikuti settingan asli FlyClash/System)";
+        } else if (dnsMode === "fake-ip") {
+            dnsConfig = `
+    // DNS: Fake-IP Mode (Anti-Bengong)
+    config.dns = {
+        "enable": true,
+        "ipv6": false,
+        "listen": "0.0.0.0:1053",
+        "enhanced-mode": "fake-ip",
+        "fake-ip-range": "198.18.0.1/16",
+        "fake-ip-filter": ["*.lan", "*.local", "time.*.com", "wpad.+"],
+        "default-nameserver": ["8.8.8.8", "1.1.1.1"],
+        "nameserver": ["https://dns.google/dns-query", "https://1.1.1.1/dns-query"],
+        "fallback": ["https://doh.pub/dns-query", "8.8.8.8"],
+        "fallback-filter": { "geoip": true, "ipcidr": ["240.0.0.0/4"] }
+    };`;
         } else {
-            // Format Lama (Base64)
-            const hashIndex = s.indexOf('#');
-            const base = hashIndex === -1 ? s : s.slice(0, hashIndex);
-            const decoded = tryAtob(base);
-            if (!decoded) return { error: true };
-            
-            const atIndex = decoded.indexOf('@');
-            const methods = decoded.slice(0, atIndex);
-            const hostPort = decoded.slice(atIndex + 1);
-            
-            const colonIndex = hostPort.lastIndexOf(':');
-            server = colonIndex === -1 ? hostPort : hostPort.slice(0, colonIndex);
-            port = colonIndex === -1 ? 8388 : parseInt(hostPort.slice(colonIndex + 1), 10);
-            
-            cipher = methods.split(':')[0];
-            password = methods.split(':')[1] || '';
-            name = hashIndex === -1 ? `${server}:${port}` : decodeURIComponent(s.slice(hashIndex + 1));
+            const dnsList = JSON.stringify(customDnsIP.split(',').map(d => d.trim()));
+            dnsConfig = `
+    // DNS: Custom User
+    if (!config.dns) config.dns = {};
+    config.dns.nameserver = ${dnsList};`;
         }
-        
-        return {
-            proto: 'ss',
-            type: 'shadowsocks',
-            name: name + '-' + Math.random().toString(36).slice(2, 6),
-            server: server,
-            port: port,
-            cipher: cipher,
-            password: password
-        };
-    } catch (e) { return { error: true }; }
-}
 
-function parseAny(line) {
-    const l = line.trim();
-    if (!l) return null;
-    if (/^vless:\/\//i.test(l)) return parseVLESS(l);
-    if (/^vmess:\/\//i.test(l)) return parseVMess(l);
-    if (/^trojan:\/\//i.test(l)) return parseTrojan(l);
-    if (/^ss:\/\//i.test(l)) return parseSS(l);
-    
-    // Cek Base64 murni (biasanya VMess)
-    const m = l.replace(/^vmess:\/\//i, '');
-    if (/^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/.test(m)) return parseVMess('vmess://' + m);
-    
-    return { error: true, raw: l };
-}
-
-// --- Generator Logic (Membuat Format Clash) ---
-
-function nodeToClash(node, opts = {}) {
-    if (!node || node.error) return null;
-    
-    const base = {
-        name: node.name,
-        server: node.host || node.server,
-        port: node.port
-    };
-    const skip = opts.skipCert;
-
-    if (node.type === 'vless') {
-        return {
-            ...base,
-            type: 'vless',
-            uuid: node.uuid,
-            tls: true,
-            'skip-cert-verify': skip,
-            servername: node.sni || node.host,
-            network: node.network,
-            'ws-opts': {
-                path: node.path,
-                headers: { Host: node.sni || node.host }
-            }
-        };
-    }
-    if (node.type === 'vmess') {
-        return {
-            ...base,
-            type: 'vmess',
-            uuid: node.uuid,
-            alterId: 0,
-            tls: node.tls,
-            'skip-cert-verify': skip,
-            network: node.network,
-            'ws-opts': node.network === 'ws' ? {
-                path: node.path,
-                headers: { Host: node.host }
-            } : undefined
-        };
-    }
-    if (node.type === 'trojan') {
-        return {
-            ...base,
-            type: 'trojan',
-            password: node.password,
-            tls: true,
-            'skip-cert-verify': skip,
-            servername: node.sni || node.host
-        };
-    }
-    if (node.type === 'shadowsocks') {
-        return {
-            ...base,
-            type: 'shadowsocks',
-            cipher: node.cipher,
-            password: node.password
-        };
-    }
-    return null;
-}
-
-function makeOverride(clashNodes, opts) {
-    const dnsNames = (opts.dns || '8.8.8.8,1.1.1.1').split(',').map(x => x.trim()).filter(Boolean);
-    const proxiesBlock = clashNodes.map(n => JSON.stringify(n, null, 4).replace(/\n/g, '\n        ')).join(',\n');
-    const names = clashNodes.map(n => n.name);
-    
-    let newGroups = [];
-
-    // --- LOGIKA HYBRID (Membuat 3 Grup Sekaligus) ---
-    if (opts.mode === 'hybrid') {
-        newGroups.push({
-            name: `${opts.groupName} - AUTO`,
-            type: 'url-test',
-            url: 'https://www.gstatic.com/generate_204',
-            interval: opts.interval,
-            tolerance: 50,
-            proxies: names
-        });
-        newGroups.push({
-            name: `${opts.groupName} - FALLBACK`,
-            type: 'fallback',
-            url: 'https://www.gstatic.com/generate_204',
-            interval: opts.interval,
-            proxies: names
-        });
-        newGroups.push({
-            name: `${opts.groupName} - MANUAL`,
-            type: 'select',
-            proxies: names
-        });
-    } 
-    // --- LOGIKA MODE BIASA ---
-    else {
-        let groupObj = { name: opts.groupName, proxies: names };
-        
-        if (opts.mode === 'auto') {
-            groupObj = { ...groupObj, type: 'url-test', url: 'https://www.gstatic.com/generate_204', interval: opts.interval, tolerance: 50 };
-        } else if (opts.mode === 'loadbalance') {
-            groupObj = { ...groupObj, type: 'load-balance', strategy: 'consistent-hashing' };
-            if (opts.weights) {
-                const w = opts.weights.split(',').map(Number).filter(n => !isNaN(n));
-                if (w.length === names.length) groupObj.weights = w;
-            }
-        } else if (opts.mode === 'fallback') {
-            groupObj = { ...groupObj, type: 'fallback', url: 'https://www.gstatic.com/generate_204', interval: opts.interval };
-        } else {
-            groupObj = { ...groupObj, type: 'select' };
+        // 3. Process Rules
+        let rulesInject = "";
+        if (adblock) {
+            rulesInject = `
+    const rules = [
+        "DOMAIN-KEYWORD,ads,REJECT",
+        "DOMAIN-SUFFIX,doubleclick.net,REJECT",
+        "DOMAIN-SUFFIX,googleadservices.com,REJECT"
+    ];
+    config.rules = rules.concat(config.rules || []);`;
         }
-        
-        newGroups.push(groupObj);
-    }
 
-    // Logic untuk menyuntikkan (Inject) grup baru ke grup bawaan
-    const newGroupNames = newGroups.map(g => g.name);
-    const autoInsert = opts.autoInsert ? `
-    try {
-        const targetGroups = ['🚀 节点选择', 'Proxy', 'Auto', 'Select', 'GLOBAL'];
-        (config['proxy-groups'] || []).forEach(g => {
-            if (targetGroups.includes(g.name) || g.type === 'select') {
-                g.proxies = g.proxies || [];
-                // Masukkan grup baru ke grup yang sudah ada
-                ${JSON.stringify(newGroupNames)}.forEach(newGroup => {
-                    if (!g.proxies.includes(newGroup)) g.proxies.unshift(newGroup);
-                });
-            }
-        });
-        
-        // Tambahkan definisi grup baru ke paling atas
-        const newGroupsDef = ${JSON.stringify(newGroups, null, 4)};
-        newGroupsDef.forEach(g => config['proxy-groups'].unshift(g));
-        
-    } catch(e) {}` 
-    : 
-    `// Manual Insert Mode
-    const newGroupsDef = ${JSON.stringify(newGroups, null, 4)};
-    newGroupsDef.forEach(g => config['proxy-groups'].push(g));`;
-
-    // Aturan AdBlock
-    const adRules = opts.adblock ? [
-        "DOMAIN-SUFFIX,ads.google.com,REJECT",
-        "DOMAIN-KEYWORD,adservice,REJECT",
-        "DOMAIN-KEYWORD,analytics,REJECT",
-        "DOMAIN-SUFFIX,doubleclick.net,REJECT"
-    ] : [];
-
-    // Template Output Akhir
-    return `// FlyClash Override Generated by Itsbad
-// Mode: ${opts.mode} | Interval: ${opts.interval}s
+        // 4. Construct Final Script
+        const script = `// FlyClash Override Generated
+// Created: ${new Date().toLocaleString()}
+// Nodes: ${nodes.length}
 
 function main(config) {
-    // 1. Masukkan Proxy (Akun)
-    config.proxies = (config.proxies || []).concat([
-        ${proxiesBlock}
-    ]);
-
-    // 2. Pastikan proxy-groups ada
+    const proxies = ${nodesJson};
+    
+    // 1. Tambahkan Proxy
+    config.proxies = (config.proxies || []).concat(proxies);
+    
+    // 2. Buat Group Strategy
+    const group = {
+        "name": "${groupName}",
+        "type": "${mode}",
+        "url": "http://www.gstatic.com/generate_204",
+        "interval": ${interval},
+        "proxies": proxies.map(p => p.name)
+    };
+    
     if (!config['proxy-groups']) config['proxy-groups'] = [];
+    
+    // ${autoInsert ? "Insert ke posisi paling atas" : "Push ke bawah"}
+    ${autoInsert ? "config['proxy-groups'].unshift(group);" : "config['proxy-groups'].push(group);"}
 
-    // 3. Masukkan Group Baru (Auto Insert Logic)
-    ${autoInsert}
+    // 3. DNS Configuration
+    ${dnsConfig}
 
-    // 4. Setup DNS
-    config.dns = config.dns || {};
-    config.dns.enable = true;
-    config.dns.nameserver = ${JSON.stringify(dnsNames)};
+    // 4. Rules
+    ${rulesInject}
 
-    // 5. Setup Rules (AdBlock)
-    ${adRules.length ? `config.rules = (config.rules || []).concat(${JSON.stringify(adRules)});` : ''}
+    // 5. Auto Add to other Select Groups
+    config['proxy-groups'].forEach(g => {
+        if (g.type === 'select' && g.name !== "${groupName}") {
+            g.proxies.push("${groupName}");
+        }
+    });
 
     return config;
 }`;
-}
-
-// --- Event Listeners (Interaksi User) ---
-document.addEventListener('DOMContentLoaded', () => {
-    // Inisialisasi Ikon
-    lucide.createIcons();
-
-    // Cache Element
-    const el = {
-        input: $('#fc-input'),
-        btnGen: $('#fc-generate'),
-        btnClear: $('#fc-clear'),
-        btnVal: $('#fc-validate'),
-        outJS: $('#fc-js'),
-        outYAML: $('#fc-yaml'),
-        mode: $('#fc-mode'),
-        interval: $('#fc-interval'),
-        group: $('#fc-group'),
-        skip: $('#fc-skip'),
-        ad: $('#fc-ad'),
-        auto: $('#fc-autoadd'),
-        lbArea: $('#fc-lb-area'),
-        lbWeights: $('#fc-lb'),
-        dns: $('#fc-dns'),
-        modal: $('#info-modal'),
-        modalTitle: $('#modal-title'),
-        modalDesc: $('#modal-desc'),
-        closeModal: $('#close-modal')
+        setOutputJS(script);
+        
+        // YAML Preview Simpel
+        setOutputYAML(`proxies:\n${nodes.map(n => `  - { name: ${n.name}, type: ${n.type}, server: ${n.server} }`).join('\n')}\n\nproxy-groups:\n  - name: ${groupName}\n    type: ${mode}\n    proxies:\n${nodes.map(n => `      - ${n.name}`).join('\n')}`);
     };
 
-    // --- Modal Logic ---
-    $$('.info-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const key = btn.dataset.key;
-            if (explanations[key]) {
-                el.modalTitle.textContent = "Info";
-                el.modalDesc.innerHTML = explanations[key];
-                el.modal.classList.remove('hidden');
-            }
-        });
-    });
+    // --- UTILS ---
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
+        alert("Berhasil disalin!");
+    };
 
-    const hideModal = () => el.modal.classList.add('hidden');
-    el.closeModal.addEventListener('click', hideModal);
-    el.modal.addEventListener('click', (e) => {
-        if (e.target === el.modal) hideModal();
-    });
+    const downloadFile = (content, filename) => {
+        const blob = new Blob([content], { type: "text/javascript" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+    };
 
-    // --- Mode Change Logic ---
-    el.mode.addEventListener('change', () => {
-        // Tampilkan/Sembunyikan LB Weights
-        if (el.mode.value === 'loadbalance') {
-            el.lbArea.classList.remove('hidden');
-        } else {
-            el.lbArea.classList.add('hidden');
-        }
-        
-        // Auto Ganti Nama Group
-        if (el.mode.value === 'auto') el.group.value = 'AUTO BEST PING';
-        if (el.mode.value === 'manual') el.group.value = 'MANUAL SELECT';
-        if (el.mode.value === 'loadbalance') el.group.value = 'LOAD BALANCE';
-        if (el.mode.value === 'fallback') el.group.value = 'FAILOVER PRO';
-        if (el.mode.value === 'hybrid') el.group.value = 'HYBRID GROUP';
-    });
-
-    // --- Button Actions ---
-    el.btnClear.addEventListener('click', () => {
-        el.input.value = '';
-        el.outJS.textContent = '// Hasil script akan muncul di sini...';
-        el.outYAML.textContent = '';
-    });
-
-    el.btnVal.addEventListener('click', () => {
-        const lines = el.input.value.split('\n').filter(x => x.trim());
-        const valid = lines.map(l => parseAny(l)).filter(x => x && !x.error).length;
-        alert(`Total Baris: ${lines.length}\nValid Config: ${valid}`);
-    });
-
-    el.btnGen.addEventListener('click', () => {
-        const lines = el.input.value.split('\n').filter(x => x.trim());
-        const nodes = lines.map(l => parseAny(l)).filter(x => x && !x.error);
-        
-        if (!nodes.length) return alert('Tidak ada config valid yang ditemukan!');
-
-        const clashNodes = nodes.map(n => nodeToClash(n, { skipCert: el.skip.checked }));
-        
-        const jsCode = makeOverride(clashNodes, {
-            mode: el.mode.value,
-            interval: Number(el.interval.value),
-            groupName: el.group.value,
-            autoInsert: el.auto.checked,
-            adblock: el.ad.checked,
-            dns: el.dns.value,
-            weights: el.lbWeights.value
-        });
-
-        el.outJS.textContent = jsCode;
-
-        // Generate Simple YAML Preview
-        const yamlCode = `proxies:\n${clashNodes.map(n => `  - { name: "${n.name}", type: ${n.type} }`).join('\n')}\nproxy-groups:\n  - name: "${el.group.value}"\n    type: ${el.mode.value}`;
-        el.outYAML.textContent = yamlCode;
-
-        // Auto Scroll di HP
-        if (window.innerWidth < 768) {
-            $('.output-section').scrollIntoView({ behavior: "smooth" });
-        }
-    });
-
-    // Copy & Download
-    $('#fc-copy-js').addEventListener('click', () => {
-        navigator.clipboard.writeText(el.outJS.textContent).then(() => alert('JS Override berhasil disalin!'));
-    });
-
-    $('#fc-download-js').addEventListener('click', () => {
-        downloadText('flyclash-override.js', el.outJS.textContent, 'application/javascript');
-    });
-
-    // Tab Switching (JS / YAML)
-    $$('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            $$('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+    // --- RENDER UI ---
+    return (
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            $$('.code-block').forEach(c => c.classList.remove('active'));
-            $(`#fc-${btn.dataset.target}`).classList.add('active');
-            
-            if (btn.dataset.target === 'yaml') {
-                $('#fc-copy-js').classList.add('hidden');
-                $('#fc-download-js').classList.add('hidden');
-                $('#fc-copy-yaml').classList.remove('hidden');
-            } else {
-                $('#fc-copy-js').classList.remove('hidden');
-                $('#fc-download-js').classList.remove('hidden');
-                $('#fc-copy-yaml').classList.add('hidden');
-            }
-        });
-    });
-});
+            {/* HEADER */}
+            <div className="lg:col-span-12 flex items-center justify-between mb-2">
+                <div>
+                    <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent flex items-center gap-2">
+                        <Zap className="text-primary fill-current" /> FlyClash Converter <span className="text-xs border border-primary px-2 py-0.5 rounded text-primary">PRO</span>
+                    </h1>
+                </div>
+            </div>
+
+            {/* LEFT: INPUTS */}
+            <div className="lg:col-span-5 space-y-6">
+                
+                {/* Input Box */}
+                <div className="glass p-5 rounded-xl border-l-4 border-l-primary">
+                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 block">Input Config</label>
+                    <textarea 
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        className="w-full h-48 bg-background border border-zinc-700 rounded-lg p-3 text-xs font-mono text-zinc-300 focus:border-primary focus:outline-none resize-none placeholder-zinc-700"
+                        placeholder="Paste link vmess/vless/trojan di sini..."
+                    ></textarea>
+                    <div className="flex justify-between items-center mt-3">
+                        <span className="text-xs text-zinc-500">{nodesCount} nodes detected</span>
+                        <div className="flex gap-2">
+                            <button onClick={() => setInput("")} className="px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 rounded-md transition">Clear</button>
+                            <button onClick={generate} className="px-4 py-1.5 bg-primary hover:bg-indigo-500 text-white text-xs font-bold rounded-md shadow-lg shadow-indigo-500/20 transition flex items-center gap-2">
+                                <Play size={14}/> Generate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mode Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                    {[
+                        {id: 'url-test', icon: Zap, label: 'Auto Ping'},
+                        {id: 'select', icon: Settings, label: 'Manual'},
+                        {id: 'load-balance', icon: RefreshCw, label: 'Load Balance'},
+                        {id: 'fallback', icon: CheckCircle, label: 'Fallback'}
+                    ].map((m) => (
+                        <button 
+                            key={m.id}
+                            onClick={() => setMode(m.id)}
+                            className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${mode === m.id ? 'bg-primary/20 border-primary text-white' : 'glass border-transparent text-zinc-400 hover:bg-zinc-800'}`}
+                        >
+                            <m.icon size={20} />
+                            <span className="text-xs font-medium">{m.label}</span>
+                        </button>
+                    ))}
+                </div>
+
+                {/* Detailed Settings */}
+                <div className="glass p-5 rounded-xl space-y-4">
+                    <h3 className="text-sm font-semibold text-white flex items-center gap-2"><Settings size={16}/> Configuration</h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-xs text-zinc-500 mb-1 block">Interval (s)</label>
+                            <input type="number" value={interval} onChange={(e) => setIntervalVal(e.target.value)} className="w-full input-dark rounded-md p-2 text-sm" />
+                        </div>
+                        <div>
+                            <label className="text-xs text-zinc-500 mb-1 block">Group Name</label>
+                            <input type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)} className="w-full input-dark rounded-md p-2 text-sm" />
+                        </div>
+                    </div>
+
+                    {/* DNS SETTINGS BARU */}
+                    <div>
+                        <label className="text-xs text-zinc-500 mb-1 flex items-center gap-2">
+                            <Server size={12}/> DNS Strategy
+                        </label>
+                        <select 
+                            value={dnsMode} 
+                            onChange={(e) => setDnsMode(e.target.value)}
+                            className="w-full input-dark rounded-md p-2 text-sm mb-2 cursor-pointer"
+                        >
+                            <option value="default">Default (Aman - No Override)</option>
+                            <option value="fake-ip">⚡ Anti-Bengong (Fake-IP)</option>
+                            <option value="custom">Custom IP Manual</option>
+                        </select>
+                        {dnsMode === 'custom' && (
+                            <input 
+                                type="text" 
+                                value={customDnsIP} 
+                                onChange={(e) => setCustomDnsIP(e.target.value)} 
+                                placeholder="8.8.8.8, 1.1.1.1"
+                                className="w-full input-dark rounded-md p-2 text-sm" 
+                            />
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 pt-2">
+                        <label className="flex items-center gap-2 p-2 rounded bg-zinc-800/50 cursor-pointer border border-zinc-700/50 hover:border-zinc-500">
+                            <input type="checkbox" checked={skipCert} onChange={() => setSkipCert(!skipCert)} className="accent-primary" />
+                            <span className="text-xs text-zinc-300">Skip Cert</span>
+                        </label>
+                        <label className="flex items-center gap-2 p-2 rounded bg-zinc-800/50 cursor-pointer border border-zinc-700/50 hover:border-zinc-500">
+                            <input type="checkbox" checked={adblock} onChange={() => setAdblock(!adblock)} className="accent-primary" />
+                            <span className="text-xs text-zinc-300">Adblock</span>
+                        </label>
+                        <label className="flex items-center gap-2 p-2 rounded bg-zinc-800/50 cursor-pointer border border-zinc-700/50 hover:border-zinc-500">
+                            <input type="checkbox" checked={autoInsert} onChange={() => setAutoInsert(!autoInsert)} className="accent-primary" />
+                            <span className="text-xs text-zinc-300">Top Insert</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            {/* RIGHT: OUTPUT */}
+            <div className="lg:col-span-7 flex flex-col gap-6">
+                
+                {/* JS Output Card */}
+                <div className="glass flex flex-col rounded-xl overflow-hidden h-[600px] border border-zinc-800">
+                    <div className="bg-zinc-900/80 p-3 border-b border-zinc-800 flex justify-between items-center backdrop-blur-sm">
+                        <span className="text-xs font-mono text-primary flex items-center gap-2"><Code size={14}/> Result - JS Override</span>
+                        <div className="flex gap-2">
+                            <button onClick={() => copyToClipboard(outputJS)} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1 rounded flex items-center gap-1 transition"><Copy size={12}/> Copy</button>
+                            <button onClick={() => downloadFile(outputJS, 'override.js')} className="text-xs bg-primary hover:bg-indigo-600 text-white px-3 py-1 rounded flex items-center gap-1 transition"><Download size={12}/> Save JS</button>
+                        </div>
+                    </div>
+                    <div className="flex-1 bg-[#0d0d10] p-4 overflow-auto font-mono text-xs leading-relaxed">
+                        <pre className="text-zinc-400 whitespace-pre-wrap">{outputJS || "// Hasil script akan muncul di sini..."}</pre>
+                    </div>
+                </div>
+
+                {/* YAML Preview */}
+                <div className="glass rounded-xl overflow-hidden border border-zinc-800">
+                    <div className="bg-zinc-900/80 p-2 border-b border-zinc-800 flex justify-between items-center">
+                            <span className="text-xs font-mono text-zinc-400 px-2">Structure Preview</span>
+                    </div>
+                    <div className="bg-[#0d0d10] p-3 overflow-auto max-h-32 font-mono text-[10px] text-zinc-500">
+                        <pre>{outputYAML || "..."}</pre>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    );
+};
+
+// --- INITIALIZE ---
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+lucide.createIcons();
