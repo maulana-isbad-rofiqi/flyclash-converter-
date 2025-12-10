@@ -1,220 +1,128 @@
 <!DOCTYPE html>
-<html lang="id" class="dark">
+<html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlyClash Converter Pro</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        background: '#09090b',
-                        surface: '#18181b',
-                        primary: '#6366f1',
-                        accent: '#8b5cf6',
-                    },
-                    fontFamily: { mono: ['monospace'], sans: ['sans-serif'] }
-                }
-            }
-        }
-    </script>
-    
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <style>
-        body { background-color: #09090b; color: #e4e4e7; font-family: sans-serif; }
-        .glass { background: rgba(39, 39, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
-        .input-dark { background: #09090b; border: 1px solid #3f3f46; color: #f4f4f5; }
-        .btn-mode.active { background-color: rgba(99, 102, 241, 0.2); border-color: #6366f1; color: white; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlyClash Converter PRO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body class="min-h-screen p-4 md:p-8">
+<body>
 
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+  <div class="app-container">
+    <header class="app-header">
+      <div class="brand">
+        <i data-lucide="zap" class="logo-icon"></i>
+        <div>
+          <h1>FlyClash Converter <span class="badge-pro">PRO</span></h1>
+          <p class="subtitle">V2Ray to Clash JS Override Generator</p>
+        </div>
+      </div>
+      <div class="meta-info">
+        <span id="clock">00:00</span>
+        <span class="creator">by Itsbad-</span>
+      </div>
+    </header>
+
+    <main class="main-grid">
+      <section class="card input-section">
+        <div class="card-header">
+          <h2><i data-lucide="server"></i> Configuration Input</h2>
+        </div>
         
-        <div class="lg:col-span-12 mb-2">
-            <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent flex items-center gap-2">
-                <i data-lucide="zap" class="text-primary fill-current"></i> FlyClash Converter <span class="text-xs border border-primary px-2 py-0.5 rounded text-primary">LITE</span>
-            </h1>
+        <div class="input-wrapper">
+          <textarea id="fc-input" placeholder="Paste link vmess:// vless:// trojan:// ss:// di sini... (Satu link per baris)"></textarea>
+          <div class="input-actions">
+            <button id="fc-clear" class="btn btn-ghost"><i data-lucide="trash-2"></i> Clear</button>
+            <button id="fc-validate" class="btn btn-ghost"><i data-lucide="check-circle"></i> Check</button>
+            <button id="fc-generate" class="btn btn-primary"><i data-lucide="play"></i> Generate Script</button>
+          </div>
         </div>
 
-        <div class="lg:col-span-5 space-y-6">
-            <div class="glass p-5 rounded-xl border-l-4 border-l-primary">
-                <label class="text-xs font-semibold text-zinc-400 uppercase mb-2 block">Input Config (Vmess/Vless/Trojan)</label>
-                <textarea id="input-config"
-                    class="w-full h-48 bg-background border border-zinc-700 rounded-lg p-3 text-xs font-mono text-zinc-300 focus:border-primary focus:outline-none"
-                    placeholder="Paste vmess:// or vless:// links here..."></textarea>
-                <div class="flex justify-between items-center mt-3">
-                    <span id="node-count" class="text-xs text-zinc-500">0 nodes detected</span>
-                    <button onclick="generateScript()" class="px-4 py-1.5 bg-primary hover:bg-indigo-500 text-white text-xs font-bold rounded-md shadow-lg transition flex items-center gap-2">
-                        <i data-lucide="play" width="14"></i> Generate
-                    </button>
-                </div>
+        <div class="settings-grid">
+          <div class="setting-item">
+            <label>Mode Strategy</label>
+            <div class="select-wrapper">
+              <select id="fc-mode">
+                <option value="auto">🚀 Auto Best Ping</option>
+                <option value="manual">👆 Manual Select</option>
+                <option value="loadbalance">⚖️ Load Balance</option>
+                <option value="fallback">🛡️ Failover / Fallback</option>
+              </select>
             </div>
+          </div>
 
-            <div class="grid grid-cols-2 gap-3">
-                <button onclick="setMode('url-test', this)" class="btn-mode active p-3 rounded-xl border border-transparent glass flex flex-col items-center gap-2 transition-all hover:bg-zinc-800 text-zinc-400">
-                    <i data-lucide="zap" width="20"></i> <span class="text-xs font-medium">Best Ping</span>
-                </button>
-                <button onclick="setMode('select', this)" class="btn-mode p-3 rounded-xl border border-transparent glass flex flex-col items-center gap-2 transition-all hover:bg-zinc-800 text-zinc-400">
-                    <i data-lucide="settings" width="20"></i> <span class="text-xs font-medium">Manual</span>
-                </button>
-                <button onclick="setMode('load-balance', this)" class="btn-mode p-3 rounded-xl border border-transparent glass flex flex-col items-center gap-2 transition-all hover:bg-zinc-800 text-zinc-400">
-                    <i data-lucide="refresh-cw" width="20"></i> <span class="text-xs font-medium">Load Balance</span>
-                </button>
-                <button onclick="setMode('fallback', this)" class="btn-mode p-3 rounded-xl border border-transparent glass flex flex-col items-center gap-2 transition-all hover:bg-zinc-800 text-zinc-400">
-                    <i data-lucide="check-circle" width="20"></i> <span class="text-xs font-medium">Fallback</span>
-                </button>
+          <div class="setting-group">
+            <div class="setting-item">
+              <label>Interval (s)</label>
+              <input id="fc-interval" type="number" min="1" value="300" />
             </div>
+            <div class="setting-item">
+              <label>Group Name</label>
+              <input id="fc-group" type="text" value="AUTO BEST PING" />
+            </div>
+          </div>
 
-            <div class="glass p-5 rounded-xl space-y-4">
-                <h3 class="text-sm font-semibold text-white flex items-center gap-2"><i data-lucide="settings" width="16"></i> Settings</h3>
-                <div>
-                    <label class="text-xs text-zinc-500 mb-1 block">Group Name</label>
-                    <input type="text" id="group-name" value="AUTO BEST PING" class="w-full input-dark rounded-md p-2 text-sm" />
-                </div>
-            </div>
+          <div class="toggles-wrapper">
+            <label class="toggle">
+              <input id="fc-skip" type="checkbox" checked />
+              <span class="slider"></span>
+              <span class="label-text">Skip Cert</span>
+            </label>
+            <label class="toggle">
+              <input id="fc-ad" type="checkbox" />
+              <span class="slider"></span>
+              <span class="label-text">AdBlock</span>
+            </label>
+            <label class="toggle">
+              <input id="fc-autoadd" type="checkbox" checked />
+              <span class="slider"></span>
+              <span class="label-text">Auto Insert</span>
+            </label>
+          </div>
+
+          <div id="fc-lb-area" class="setting-item hidden">
+            <label>Load Balance Weights (e.g., 50,30,20)</label>
+            <input id="fc-lb" placeholder="Leave empty for equal weights" />
+          </div>
+
+          <div class="setting-item">
+            <label>Custom DNS (Comma separated)</label>
+            <input id="fc-dns" value="8.8.8.8, 1.1.1.1" />
+          </div>
+        </div>
+      </section>
+
+      <section class="card output-section">
+        <div class="card-header">
+          <h2><i data-lucide="code"></i> Result Preview</h2>
+          <div class="tab-buttons">
+            <button class="tab-btn active" data-target="js">JS</button>
+            <button class="tab-btn" data-target="yaml">YAML</button>
+          </div>
         </div>
 
-        <div class="lg:col-span-7">
-            <div class="glass flex flex-col rounded-xl overflow-hidden h-[500px] border border-zinc-800">
-                <div class="bg-zinc-900/80 p-3 border-b border-zinc-800 flex justify-between items-center">
-                    <span class="text-xs font-mono text-primary flex items-center gap-2"><i data-lucide="code" width="14"></i> Result JS</span>
-                    <button onclick="copyResult()" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1 rounded flex items-center gap-1 transition">
-                        <i data-lucide="copy" width="12"></i> Copy
-                    </button>
-                </div>
-                <div class="flex-1 bg-black p-4 overflow-auto font-mono text-xs leading-relaxed">
-                    <pre id="output-result" class="text-zinc-400 whitespace-pre-wrap">// Result will appear here...</pre>
-                </div>
-            </div>
+        <div class="code-container">
+          <pre id="fc-js" class="code-block active">// Klik Generate untuk melihat hasil...</pre>
+          <pre id="fc-yaml" class="code-block"></pre>
         </div>
-    </div>
 
-    <script>
-        // Init Icons
-        lucide.createIcons();
-
-        // State
-        let currentMode = 'url-test';
-
-        function setMode(mode, btn) {
-            currentMode = mode;
-            // Update UI Button Active State
-            document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            // Update Group Name Text
-            const groupInput = document.getElementById('group-name');
-            if(mode === 'url-test') groupInput.value = "AUTO BEST PING";
-            if(mode === 'load-balance') groupInput.value = "LOAD BALANCE";
-            if(mode === 'fallback') groupInput.value = "FALLBACK";
-            if(mode === 'select') groupInput.value = "MANUAL SELECT";
-        }
-
-        function parseConfig(line, index) {
-            try {
-                line = line.trim();
-                if (!line) return null;
-                
-                if (line.startsWith("vmess://")) {
-                    const b64 = line.replace("vmess://", "");
-                    const conf = JSON.parse(atob(b64));
-                    return {
-                        name: conf.ps || `VMess-${index}`,
-                        type: "vmess",
-                        server: conf.add,
-                        port: parseInt(conf.port),
-                        uuid: conf.id,
-                        alterId: parseInt(conf.aid || 0),
-                        cipher: "auto",
-                        tls: conf.tls === "tls",
-                        servername: conf.host || conf.sni || "",
-                        network: conf.net || "ws",
-                        "ws-opts": conf.net === "ws" ? { path: conf.path || "/", headers: { Host: conf.host || "" } } : undefined
-                    };
-                } else if (line.startsWith("vless://") || line.startsWith("trojan://")) {
-                    const url = new URL(line);
-                    const isVless = line.startsWith("vless://");
-                    const params = url.searchParams;
-                    return {
-                        name: decodeURIComponent(url.hash.slice(1)) || `${isVless ? 'VLESS' : 'Trojan'}-${index}`,
-                        type: isVless ? "vless" : "trojan",
-                        server: url.hostname,
-                        port: parseInt(url.port),
-                        uuid: url.username,
-                        password: isVless ? undefined : url.username,
-                        tls: params.get("security") === "tls" || params.get("security") === "reality",
-                        servername: params.get("sni") || "",
-                        network: params.get("type") || "tcp",
-                        "ws-opts": params.get("type") === "ws" ? { path: params.get("path") || "/", headers: { Host: params.get("host") || "" } } : undefined
-                    };
-                }
-                return null;
-            } catch (e) { return null; }
-        }
-
-        function generateScript() {
-            const inputVal = document.getElementById('input-config').value;
-            const groupName = document.getElementById('group-name').value;
-            
-            const lines = inputVal.split('\n');
-            const nodes = lines.map((l, i) => parseConfig(l, i)).filter(n => n !== null);
-            
-            // Update Counter
-            document.getElementById('node-count').innerText = `${nodes.length} nodes detected`;
-
-            if (nodes.length === 0) {
-                document.getElementById('output-result').innerText = "// Error: No valid config found.";
-                return;
-            }
-
-            const nodesJson = JSON.stringify(nodes, null, 2);
-            const interval = (currentMode === 'url-test' || currentMode === 'fallback') ? 300 : 0;
-
-            const script = `// FlyClash Override Generated
-// Nodes: ${nodes.length} | Mode: ${currentMode}
-
-function main(config) {
-    const proxies = ${nodesJson};
+        <div class="action-buttons">
+          <button id="fc-copy-js" class="btn btn-secondary"><i data-lucide="copy"></i> Copy JS</button>
+          <button id="fc-download-js" class="btn btn-outline"><i data-lucide="download"></i> Save JS</button>
+          <button id="fc-copy-yaml" class="btn btn-secondary hidden"><i data-lucide="copy"></i> Copy YAML</button>
+        </div>
+      </section>
+    </main>
     
-    // 1. Inject Nodes
-    config.proxies = (config.proxies || []).concat(proxies);
-    
-    // 2. Create Group
-    const group = {
-        "name": "${groupName}",
-        "type": "${currentMode}",
-        "url": "http://www.gstatic.com/generate_204",
-        "interval": ${interval},
-        "proxies": proxies.map(p => p.name)
-    };
-    
-    if (!config['proxy-groups']) config['proxy-groups'] = [];
-    config['proxy-groups'].unshift(group);
-    
-    // 3. Auto Add to Manual Groups
-    config['proxy-groups'].forEach(g => {
-        if (g.type === 'select' && g.name !== "${groupName}") {
-            g.proxies.push("${groupName}");
-        }
-    });
+    <footer>
+      <p>Client-side processing only. Secure & Private.</p>
+    </footer>
+  </div>
 
-    return config;
-}`;
-            document.getElementById('output-result').innerText = script;
-        }
-
-        function copyResult() {
-            const text = document.getElementById('output-result').innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                alert("Copied to clipboard!");
-            });
-        }
-    </script>
+  <script src="script.js"></script>
 </body>
 </html>
