@@ -1,379 +1,670 @@
 <!DOCTYPE html>
 <html lang="id" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlyClash Converter Override (Native)</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FlyClash Converter Override — Itsbad- (Single Page)</title>
 
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: { bg: '#09090b', glass: '#18181b', primary: '#6366f1' }
-                }
-            }
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { bg: '#09090b', glass: '#0f1724', primary: '#6366f1' }
         }
-    </script>
+      }
+    }
+  </script>
 
-    <style>
-        body { background-color: #09090b; color: #e4e4e7; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-        .glass { background: rgba(24, 24, 27, 0.9); border: 1px solid rgba(255,255,255,0.1); }
-        
-        /* Input Styles */
-        .input-dark { background: #09090b; border: 1px solid #3f3f46; color: #f4f4f5; width: 100%; border-radius: 6px; padding: 8px; font-size: 13px; outline: none; transition: 0.2s; }
-        .input-dark:focus { border-color: #6366f1; }
-        
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #18181b; }
-        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
-        
-        /* Checkbox Custom */
-        .check-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 8px; border: 1px solid transparent; background: rgba(255,255,255,0.03); cursor: pointer; transition: 0.2s; }
-        .check-item:hover { border-color: #6366f1; background: rgba(99, 102, 241, 0.1); }
-        .check-item input { accent-color: #6366f1; width: 16px; height: 16px; cursor: pointer; }
-        
-        /* Help Button */
-        .help-btn { color: #71717a; padding: 0 5px; font-weight: bold; font-size: 14px; transition: 0.2s; }
-        .help-btn:hover { color: #fff; }
-
-        /* Mode Button Active State */
-        .mode-btn { transition: 0.2s; border: 1px solid transparent; }
-        .mode-btn.active { background: rgba(99, 102, 241, 0.2); border-color: #6366f1; color: white; }
-        
-        /* Modal */
-        #help-modal { transition: opacity 0.2s; }
-        .hidden { display: none !important; }
-    </style>
+  <style>
+    /* Small extra styles */
+    body { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; background:#09090b; color:#e6eef8; }
+    .glass { background: rgba(17,24,39,0.6); border: 1px solid rgba(255,255,255,0.04); }
+    .input-dark { background:#0b1220; border:1px solid #1f2937; color:#e6eef8; padding:8px; border-radius:6px; }
+    .badge { font-size:11px; background:rgba(255,255,255,0.04); padding:4px 8px; border-radius:999px; color:#cbd5e1; }
+    pre { white-space: pre-wrap; }
+    .hidden { display: none !important; }
+    .small { font-size:12px; color:#94a3b8; }
+    .muted { color:#94a3b8; font-size:12px; }
+    .help-btn { color:#94a3b8; cursor:pointer; }
+    .loading-spinner { border: 3px solid rgba(255,255,255,0.06); border-top: 3px solid rgba(99,102,241,0.9); border-radius:50%; width:18px; height:18px; animation:spin 0.9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    textarea::-webkit-scrollbar { height:8px; width:8px; }
+    textarea::-webkit-scrollbar-thumb { background:#374151; border-radius:6px; }
+  </style>
 </head>
-<body class="min-h-screen p-4 md:p-8">
+<body class="min-h-screen p-6">
 
-    <div class="max-w-7xl mx-auto mb-6 flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-white flex items-center gap-3">
-            <span class="text-primary">⚡</span> FlyClash Converter Override
-        </h1>
-        <div class="text-xs font-mono text-zinc-500 border border-zinc-800 px-3 py-1 rounded-full">Dev: Itsbad</div>
+  <header class="max-w-6xl mx-auto flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-2xl font-bold flex items-center gap-3"><span class="text-primary">⚡</span> FlyClash Converter Override <span class="ml-2 badge">Itsbad-</span></h1>
+      <div class="muted mt-1">Single page — Generate FlyClash override (.js) & preview YAML/JSON</div>
     </div>
+    <div class="text-sm muted">v1.0 · <span id="build-time"></span></div>
+  </header>
 
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 pb-20">
-        
-        <div class="lg:col-span-5 space-y-6">
-            
-            <div class="glass p-5 rounded-xl border-l-4 border-l-primary">
-                <div class="flex justify-between mb-2">
-                    <label class="text-xs font-bold text-gray-400">1. INPUT CONFIG</label>
-                    <span id="node-count" class="text-xs text-primary font-mono">0 nodes</span>
-                </div>
-                <textarea id="input-config" class="w-full h-32 bg-black/30 border border-zinc-700 rounded-lg p-3 text-xs font-mono text-gray-300 focus:border-primary focus:outline-none resize-none" placeholder="Paste vmess:// vless:// trojan:// di sini..."></textarea>
-                <div class="flex justify-end mt-2">
-                    <button onclick="clearInput()" class="text-xs text-red-400 hover:text-red-300">Clear</button>
-                </div>
-            </div>
-
-            <div>
-                <label class="text-xs font-bold text-gray-400 mb-2 block">2. PILIH MODE (Bisa Banyak)</label>
-                <div class="grid grid-cols-2 gap-3">
-                    <div onclick="toggleMode('url-test')" id="btn-url-test" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center active">
-                        <div class="flex items-center gap-2"><span class="text-lg">⚡</span> <span class="text-sm font-bold">Auto Ping</span></div>
-                        <button onclick="showHelp(event, 'auto')" class="help-btn">?</button>
-                    </div>
-                    <div onclick="toggleMode('select')" id="btn-select" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center">
-                        <div class="flex items-center gap-2"><span class="text-lg">⚙️</span> <span class="text-sm font-bold">Manual</span></div>
-                        <button onclick="showHelp(event, 'manual')" class="help-btn">?</button>
-                    </div>
-                    <div onclick="toggleMode('load-balance')" id="btn-load-balance" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center">
-                        <div class="flex items-center gap-2"><span class="text-lg">🔄</span> <span class="text-sm font-bold">Load Bal</span></div>
-                        <button onclick="showHelp(event, 'lb')" class="help-btn">?</button>
-                    </div>
-                    <div onclick="toggleMode('fallback')" id="btn-fallback" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center">
-                        <div class="flex items-center gap-2"><span class="text-lg">🛡️</span> <span class="text-sm font-bold">Fallback</span></div>
-                        <button onclick="showHelp(event, 'fallback')" class="help-btn">?</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="glass p-5 rounded-xl space-y-4">
-                <h3 class="text-sm font-bold text-gray-200 border-b border-zinc-700 pb-2">3. PENGATURAN</h3>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] text-gray-500 mb-1 flex items-center justify-between">INTERVAL (s) <button onclick="showHelp(event, 'interval')" class="help-btn">?</button></label>
-                        <input type="number" id="interval" value="300" class="input-dark">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-gray-500 mb-1 flex items-center justify-between">NAMA GRUP <button onclick="showHelp(event, 'group_name')" class="help-btn">?</button></label>
-                        <input type="text" id="group-name" value="FLYCLASH" class="input-dark">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] text-gray-500 mb-1 flex items-center justify-between">MIXED PORT <button onclick="showHelp(event, 'mixed_port')" class="help-btn">?</button></label>
-                        <input type="number" id="mixed-port" value="7890" class="input-dark">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-gray-500 mb-1 flex items-center justify-between">DNS MODE <button onclick="showHelp(event, 'dns')" class="help-btn">?</button></label>
-                        <select id="dns-mode" onchange="toggleCustomDns()" class="input-dark">
-                            <option value="default">Default</option>
-                            <option value="fake-ip">⚡ Fake-IP (Anti Bengong)</option>
-                            <option value="custom">Custom IP</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <input type="text" id="custom-dns" value="8.8.8.8, 1.1.1.1" class="input-dark hidden" placeholder="8.8.8.8, 1.1.1.1">
-
-                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-800">
-                    <label class="check-item">
-                        <div class="flex gap-2"><input type="checkbox" id="skip-cert" checked><span class="text-xs text-gray-300">Skip Cert</span></div>
-                        <button onclick="showHelp(event, 'skip_cert')" class="help-btn">?</button>
-                    </label>
-                    <label class="check-item">
-                        <div class="flex gap-2"><input type="checkbox" id="block-ads"><span class="text-xs text-gray-300">Block Ads</span></div>
-                        <button onclick="showHelp(event, 'block_ads')" class="help-btn">?</button>
-                    </label>
-                    <label class="check-item">
-                        <div class="flex gap-2"><input type="checkbox" id="top-prio" checked><span class="text-xs text-gray-300">Top Priority</span></div>
-                        <button onclick="showHelp(event, 'top_prio')" class="help-btn">?</button>
-                    </label>
-                    <label class="check-item">
-                        <div class="flex gap-2"><input type="checkbox" id="inject-sosmed"><span class="text-xs text-gray-300">Inject WA/TT</span></div>
-                        <button onclick="showHelp(event, 'inject_sosmed')" class="help-btn">?</button>
-                    </label>
-                    <label class="check-item col-span-2">
-                        <div class="flex gap-2"><input type="checkbox" id="allow-lan" checked><span class="text-xs text-gray-300">Allow LAN (Share Wifi)</span></div>
-                        <button onclick="showHelp(event, 'allow_lan')" class="help-btn">?</button>
-                    </label>
-                </div>
-
-                <button onclick="generateScript()" class="w-full py-3 bg-primary hover:bg-indigo-500 text-white font-bold rounded-lg mt-4 shadow-lg shadow-indigo-500/20 transition">GENERATE SCRIPT</button>
-            </div>
+  <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- LEFT: Controls -->
+    <section class="lg:col-span-5 space-y-6">
+      <!-- Input -->
+      <div class="glass p-4 rounded-xl border-l-4 border-l-primary">
+        <div class="flex justify-between items-center">
+          <div>
+            <label class="text-xs font-bold text-gray-300">1. Paste configs (satu baris tiap link)</label>
+            <div class="small muted">vmess:// | vless:// | trojan:// | ss:// — dukung URI & base64</div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span id="counter" class="badge">0 nodes</span>
+            <button id="import-file" class="text-xs muted hover:text-white">Import .txt</button>
+            <input id="file-input" type="file" accept=".txt" class="hidden"/>
+          </div>
         </div>
 
-        <div class="lg:col-span-7">
-            <div class="glass flex flex-col rounded-xl overflow-hidden h-[600px] border border-zinc-800">
-                <div class="bg-zinc-900/80 p-3 border-b border-zinc-800 flex justify-between items-center">
-                    <span class="text-xs font-mono text-primary flex items-center gap-2">📄 HASIL OUTPUT</span>
-                    <div class="flex gap-2">
-                        <button onclick="copyText()" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1 rounded border border-zinc-700">Copy</button>
-                        <button onclick="downloadFile()" class="text-xs bg-primary hover:bg-indigo-600 text-white px-3 py-1 rounded">Save .js</button>
-                    </div>
-                </div>
-                <textarea id="output-area" readonly class="flex-1 bg-black/50 p-4 font-mono text-xs leading-relaxed text-gray-300 resize-none focus:outline-none">
-// 1. Masukkan akun Vmess/Vless/Trojan
-// 2. Pilih Mode (Auto Ping / Manual / dll)
-// 3. Klik Generate Script
-                </textarea>
-            </div>
+        <textarea id="input-config" class="w-full h-36 mt-3 input-dark font-mono text-sm" placeholder="Paste vmess:// vless:// trojan:// ss:// ..."></textarea>
+        <div class="flex gap-2 mt-2">
+          <button id="analyze-btn" class="flex-1 py-2 bg-primary rounded text-sm font-bold">Analyze</button>
+          <button id="clear-btn" class="py-2 px-3 bg-zinc-800 rounded text-sm">Clear</button>
         </div>
-    </div>
 
-    <div id="help-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm" onclick="closeHelp()">
-        <div class="bg-[#18181b] border border-zinc-700 w-full max-w-sm rounded-xl p-6 shadow-2xl" onclick="event.stopPropagation()">
-            <h3 id="modal-title" class="text-lg font-bold text-primary mb-2">Title</h3>
-            <p id="modal-desc" class="text-sm text-zinc-300 mb-4 whitespace-pre-line leading-relaxed">Desc</p>
-            <button onclick="closeHelp()" class="w-full py-2 bg-zinc-800 rounded text-xs font-bold text-zinc-300 hover:bg-zinc-700">TUTUP</button>
+        <div class="grid grid-cols-3 gap-2 mt-3 small">
+          <div class="p-2 bg-transparent rounded flex flex-col"><span class="muted">VMess</span><span id="count-vmess" class="font-bold">0</span></div>
+          <div class="p-2 bg-transparent rounded flex flex-col"><span class="muted">VLESS</span><span id="count-vless" class="font-bold">0</span></div>
+          <div class="p-2 bg-transparent rounded flex flex-col"><span class="muted">Trojan/SS</span><span id="count-trojan" class="font-bold">0</span></div>
         </div>
+      </div>
+
+      <!-- Modes -->
+      <div class="glass p-4 rounded-xl">
+        <div class="flex justify-between items-center mb-2">
+          <label class="text-xs font-bold text-gray-300">2. Pilih Mode (bisa banyak)</label>
+          <span class="small muted">Mode aktif: <span id="active-modes-text">Auto Ping</span></span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div id="btn-url-test" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center active" data-mode="url-test">
+            <div class="flex items-center gap-2"><span>⚡</span><span class="font-bold">Auto Ping</span></div>
+            <button class="help-btn" data-help="auto">?</button>
+          </div>
+
+          <div id="btn-select" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center" data-mode="select">
+            <div class="flex items-center gap-2"><span>⚙️</span><span class="font-bold">Manual</span></div>
+            <button class="help-btn" data-help="manual">?</button>
+          </div>
+
+          <div id="btn-load-balance" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center" data-mode="load-balance">
+            <div class="flex items-center gap-2"><span>🔄</span><span class="font-bold">Load Balance</span></div>
+            <button class="help-btn" data-help="lb">?</button>
+          </div>
+
+          <div id="btn-fallback" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center" data-mode="fallback">
+            <div class="flex items-center gap-2"><span>🛡️</span><span class="font-bold">Fallback</span></div>
+            <button class="help-btn" data-help="fallback">?</button>
+          </div>
+
+          <div id="btn-block-ads" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center" data-mode="block-ads">
+            <div class="flex items-center gap-2"><span>🚫</span><span class="font-bold">Block Ads</span></div>
+            <button class="help-btn" data-help="ads">?</button>
+          </div>
+
+          <div id="btn-custom" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center" data-mode="custom">
+            <div class="flex items-center gap-2"><span>✨</span><span class="font-bold">Custom</span></div>
+            <button class="help-btn" data-help="custom">?</button>
+          </div>
+        </div>
+
+        <div class="mt-3 small muted">Tip: Kombinasikan Mode sesuai kebutuhan (mis. Auto Ping + Block Ads).</div>
+      </div>
+
+      <!-- Settings -->
+      <div class="glass p-4 rounded-xl">
+        <h3 class="text-sm font-bold text-gray-200 mb-2">3. Pengaturan</h3>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="small muted">Interval (s)</label>
+            <input id="interval" class="input-dark mt-1" type="number" min="1" value="5" />
+          </div>
+          <div>
+            <label class="small muted">Nama Grup</label>
+            <input id="group-name" class="input-dark mt-1" type="text" value="FLYCLASH" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mt-3">
+          <div>
+            <label class="small muted">Mixed Port</label>
+            <input id="mixed-port" class="input-dark mt-1" type="number" value="7890" />
+          </div>
+          <div>
+            <label class="small muted">DNS Mode</label>
+            <select id="dns-mode" class="input-dark mt-1" onchange="onDnsModeChange()">
+              <option value="default">Default</option>
+              <option value="preset-cloudflare">Cloudflare (1.1.1.1)</option>
+              <option value="preset-google">Google (8.8.8.8)</option>
+              <option value="preset-quad9">Quad9 (9.9.9.9)</option>
+              <option value="fake-ip">Fake-IP (Anti Bengong)</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+        </div>
+
+        <input id="custom-dns" class="input-dark mt-3 hidden" placeholder="comma separated (e.g. 1.1.1.1, 8.8.8.8)" />
+
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <label class="check-item p-2 rounded flex items-center justify-between"><div class="flex items-center gap-2"><input id="skip-cert" type="checkbox" checked> <span class="small muted">Skip Cert</span></div></label>
+          <label class="check-item p-2 rounded flex items-center justify-between"><div class="flex items-center gap-2"><input id="block-ads" type="checkbox"> <span class="small muted">Block Ads</span></div></label>
+          <label class="check-item p-2 rounded flex items-center justify-between"><div class="flex items-center gap-2"><input id="top-prio" type="checkbox" checked> <span class="small muted">Top Priority</span></div></label>
+          <label class="check-item p-2 rounded flex items-center justify-between"><div class="flex items-center gap-2"><input id="inject-sosmed" type="checkbox"> <span class="small muted">Inject WA/TT rules</span></div></label>
+          <label class="check-item col-span-2 p-2 rounded"><div class="flex items-center gap-2"><input id="allow-lan" type="checkbox" checked> <span class="small muted">Allow LAN</span></div></label>
+        </div>
+
+        <div class="mt-4">
+          <button id="generate-btn" class="w-full py-3 bg-primary rounded text-sm font-bold flex items-center justify-center gap-3">
+            <span id="gen-loading" class="hidden loading-spinner"></span>
+            <span id="gen-text">Generate Script</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Export options small -->
+      <div class="glass p-3 rounded-xl flex gap-3 items-center">
+        <button id="export-json" class="py-2 px-3 bg-zinc-800 rounded text-sm">Export JSON</button>
+        <button id="export-yaml" class="py-2 px-3 bg-zinc-800 rounded text-sm">Export YAML (preview)</button>
+        <div class="ml-auto muted small">No uploads — local only</div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT: Output -->
+    <section class="lg:col-span-7">
+      <div class="glass rounded-xl overflow-hidden h-[760px] flex flex-col border border-zinc-800">
+        <div class="bg-zinc-900/70 p-3 border-b border-zinc-800 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="font-mono text-sm text-primary">📄 OUTPUT</span>
+            <span id="modes-pill" class="badge">Auto Ping</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="copy-btn" class="py-1 px-3 bg-zinc-800 rounded text-sm">Copy JS</button>
+            <button id="save-btn" class="py-1 px-3 bg-primary rounded text-sm">Save .js</button>
+            <button id="clear-output" class="py-1 px-3 bg-zinc-800 rounded text-sm">Clear</button>
+          </div>
+        </div>
+
+        <textarea id="output-area" class="flex-1 p-4 bg-black/30 text-sm font-mono text-gray-200" readonly>
+/* Output will appear here after you click Generate */
+        </textarea>
+
+        <div class="p-3 border-t border-zinc-800 flex gap-3">
+          <div class="flex-1 small muted">Preview YAML (click Export YAML to save)</div>
+          <div class="text-xs muted">Nodes: <span id="out-nodes">0</span> • Rules: <span id="out-rules">0</span></div>
+        </div>
+
+        <pre id="yaml-preview" class="bg-[#0b1220] text-sm p-4 max-h-64 overflow-auto hidden"></pre>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- Help Modal -->
+  <div id="help-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
+    <div class="bg-[#0b1220] rounded-xl w-full max-w-2xl p-6 border border-zinc-800">
+      <div class="flex justify-between items-start">
+        <div>
+          <h3 id="help-title" class="text-lg font-bold text-primary">Help</h3>
+          <p id="help-desc" class="muted mt-1">Detail</p>
+        </div>
+        <button onclick="closeHelp()" class="bg-zinc-800 px-3 py-2 rounded text-sm">Tutup</button>
+      </div>
     </div>
+  </div>
 
-    <script>
-        // State
-        const activeModes = new Set(['url-test']);
-        
-        // Data Penjelasan (Popup)
-        const helpData = {
-            'auto': {t: "Auto Ping", d: "Secara otomatis mengetes dan memilih akun dengan ping (latency) terendah agar koneksi selalu cepat."},
-            'manual': {t: "Manual Select", d: "Anda harus memilih sendiri server/akun mana yang ingin digunakan di menu Proxy FlyClash."},
-            'lb': {t: "Load Balance", d: "Menggabungkan bandwidth beberapa akun sekaligus. Request akan dibagi rata. Berguna untuk meningkatkan speed download."},
-            'fallback': {t: "Fallback", d: "Sistem cadangan. Selalu menggunakan Akun Pertama. Jika mati, otomatis pindah ke Akun Kedua."},
-            'interval': {t: "Interval Testing", d: "Jeda waktu (detik) untuk mengecek ping server. Standar: 300s. Set lebih kecil (150s) agar perpindahan Auto Ping lebih responsif."},
-            'group_name': {t: "Nama Grup", d: "Label nama yang akan muncul di daftar Proxy aplikasi FlyClash."},
-            'mixed_port': {t: "Mixed Port", d: "Port lokal proxy (HTTP/SOCKS5). Default FlyClash adalah 7890."},
-            'allow_lan': {t: "Allow LAN (Share Wifi)", d: "Mengizinkan perangkat lain (HP/Laptop) yang terhubung ke Hotspot/Wifi HP Anda untuk ikut menggunakan koneksi VPN ini."},
-            'dns': {t: "DNS Strategy", d: "- Fake-IP: Memaksa mode Fake-IP. Sangat ampuh mengatasi 'Connected tapi tidak ada internet'.\n- Custom: Memaksa DNS tertentu (8.8.8.8) untuk buka blokir."},
-            'skip_cert': {t: "Skip Certificate", d: "Mematikan verifikasi SSL. WAJIB DI-CENTANG jika menggunakan akun gratisan/self-signed agar tidak error/timeout."},
-            'block_ads': {t: "Block Ads", d: "Menambahkan aturan otomatis untuk memblokir domain iklan populer (Google Ads, DoubleClick, dll) agar hemat kuota."},
-            'top_prio': {t: "Top Priority", d: "Menaruh grup proxy buatan generator ini di urutan PALING ATAS di menu FlyClash agar mudah ditemukan."},
-            'inject_sosmed': {t: "Inject WA/TT", d: "Memaksa WhatsApp, TikTok, & Mobile Legends lewat proxy ini agar chat tidak pending dan ping game stabil."}
-        };
+  <footer class="max-w-6xl mx-auto mt-8 text-center muted text-sm">
+    Made by Itsbad- · Tidak ada upload ke server · Pastikan FlyClash versi compatible dengan override JS.
+  </footer>
 
-        // UI Functions
-        function toggleMode(mode) {
-            const btn = document.getElementById('btn-' + mode);
-            
-            if (activeModes.has(mode)) {
-                if (activeModes.size > 1) {
-                    activeModes.delete(mode);
-                    btn.classList.remove('active');
-                }
-            } else {
-                activeModes.add(mode);
-                btn.classList.add('active');
-            }
-        }
+  <!-- SCRIPT: All features -->
+  <script>
+  // Build time
+  document.getElementById('build-time').innerText = new Date().toLocaleString();
 
-        function toggleCustomDns() {
-            const val = document.getElementById('dns-mode').value;
-            const input = document.getElementById('custom-dns');
-            if (val === 'custom') input.classList.remove('hidden');
-            else input.classList.add('hidden');
-        }
+  // State
+  const activeModes = new Set(['url-test']); // default auto ping
+  const helpTexts = {
+    auto: {title: 'Auto Ping', body: 'Otomatis mengukur url-test dan memilih node tercepat. Interval dapat diatur.'},
+    manual: {title: 'Manual', body: 'Pilih node secara manual di FlyClash (selector MANUAL).'},
+    lb: {title: 'Load Balance', body: 'Mendistribusikan trafik ke beberapa node sesuai strategi.'},
+    fallback: {title: 'Fallback', body: 'Jika node utama rusak, otomatis berpindah ke cadangan.'},
+    ads: {title: 'Block Ads', body: 'Tambahkan rule pemblokiran iklan. Daftar dipangkas supaya FlyClash tidak bengong.'},
+    custom: {title: 'Custom Mode', body: 'Mode tambahan untuk rule/penyesuaian manual.'}
+  };
 
-        function clearInput() {
-            document.getElementById('input-config').value = '';
-            document.getElementById('node-count').innerText = '0 nodes';
-        }
+  // UI references
+  const inputEl = document.getElementById('input-config');
+  const analyzeBtn = document.getElementById('analyze-btn');
+  const clearBtn = document.getElementById('clear-btn');
+  const counterEl = document.getElementById('counter');
+  const vmCount = document.getElementById('count-vmess');
+  const vlCount = document.getElementById('count-vless');
+  const trCount = document.getElementById('count-trojan');
+  const outputArea = document.getElementById('output-area');
+  const yamlPreview = document.getElementById('yaml-preview');
 
-        function showHelp(e, key) {
-            e.preventDefault(); // Mencegah checkbox terklik
-            e.stopPropagation();
-            const data = helpData[key];
-            if(data) {
-                document.getElementById('modal-title').innerText = data.t;
-                document.getElementById('modal-desc').innerText = data.d;
-                document.getElementById('help-modal').classList.remove('hidden');
-            }
-        }
+  // File import
+  document.getElementById('import-file').addEventListener('click', () => document.getElementById('file-input').click());
+  document.getElementById('file-input').addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const txt = await f.text();
+    inputEl.value += (inputEl.value ? '\n' : '') + txt;
+    analyzeConfigs();
+  });
 
-        function closeHelp() {
-            document.getElementById('help-modal').classList.add('hidden');
-        }
-
-        // --- CORE LOGIC ---
-
-        function parseConfig(line, index) {
-            try {
-                if (line.startsWith("vmess://")) {
-                    const b64 = line.replace("vmess://", "");
-                    const conf = JSON.parse(atob(b64));
-                    return {
-                        name: conf.ps || `VMess-${index}`, type: "vmess", server: conf.add, port: parseInt(conf.port), uuid: conf.id, alterId: parseInt(conf.aid || 0), cipher: "auto", tls: conf.tls === "tls", servername: conf.host || conf.sni || "", network: conf.net || "ws", "ws-opts": conf.net === "ws" ? { path: conf.path || "/", headers: { Host: conf.host || "" } } : undefined, "grpc-opts": conf.net === "grpc" ? { "grpc-service-name": conf.path || "grpc" } : undefined
-                    };
-                } else if (line.startsWith("vless://") || line.startsWith("trojan://")) {
-                    const url = new URL(line);
-                    const isVless = line.startsWith("vless://");
-                    const params = url.searchParams;
-                    const result = {
-                        name: decodeURIComponent(url.hash.slice(1)) || `${isVless ? 'VLESS' : 'Trojan'}-${index}`, type: isVless ? "vless" : "trojan", server: url.hostname, port: parseInt(url.port), uuid: url.username, password: isVless ? undefined : url.username, tls: params.get("security") === "tls" || params.get("security") === "reality", servername: params.get("sni") || "", network: params.get("type") || "tcp", "client-fingerprint": params.get("fp") || "chrome",
-                    };
-                    if (params.get("type") === "ws") result["ws-opts"] = { path: params.get("path") || "/", headers: { Host: params.get("host") || params.get("sni") || "" } };
-                    if (params.get("type") === "grpc") result["grpc-opts"] = { "grpc-service-name": params.get("serviceName") || "grpc" };
-                    if (params.get("security") === "reality") result["reality-opts"] = { "public-key": params.get("pbk") || "", "short-id": params.get("sid") || "" };
-                    return result;
-                }
-                return null;
-            } catch (e) { return null; }
-        }
-
-        function generateScript() {
-            const inputVal = document.getElementById('input-config').value;
-            const lines = inputVal.split('\n').filter(l => l.trim().length > 5);
-            
-            const nodes = lines.map((l, i) => parseConfig(l.trim(), i)).filter(n => n !== null);
-            document.getElementById('node-count').innerText = nodes.length + ' nodes';
-
-            if (nodes.length === 0) {
-                document.getElementById('output-area').value = "// Error: Config tidak valid atau kosong.";
-                return;
-            }
-
-            // Get Settings
-            const interval = document.getElementById('interval').value;
-            const groupName = document.getElementById('group-name').value;
-            const mixedPort = document.getElementById('mixed-port').value;
-            const allowLan = document.getElementById('allow-lan').checked;
-            const skipCert = document.getElementById('skip-cert').checked;
-            const blockAds = document.getElementById('block-ads').checked;
-            const topPrio = document.getElementById('top-prio').checked;
-            const injectSosmed = document.getElementById('inject-sosmed').checked;
-            const dnsMode = document.getElementById('dns-mode').value;
-            const customDns = document.getElementById('custom-dns').value;
-
-            // Apply Node Settings
-            nodes.forEach(n => {
-                if (skipCert) n['skip-cert-verify'] = true;
-                n.udp = true;
-            });
-
-            // Build DNS
-            let dnsConfig = "// DNS: Default";
-            if(dnsMode === 'fake-ip') {
-                dnsConfig = `config.dns = { "enable": true, "ipv6": false, "listen": "0.0.0.0:1053", "enhanced-mode": "fake-ip", "fake-ip-range": "198.18.0.1/16", "fake-ip-filter": ["*.lan", "*.local", "time.*.com", "wpad.+"], "default-nameserver": ["8.8.8.8", "1.1.1.1"], "nameserver": ["https://dns.google/dns-query", "https://1.1.1.1/dns-query"], "fallback": ["https://doh.pub/dns-query", "8.8.8.8"], "fallback-filter": { "geoip": true, "ipcidr": ["240.0.0.0/4"] } };`;
-            } else if (dnsMode === 'custom') {
-                dnsConfig = `if(!config.dns) config.dns = {}; config.dns.nameserver = ${JSON.stringify(customDns.split(',').map(s=>s.trim()))};`;
-            }
-
-            // Build Rules
-            let extraRules = [];
-            if(blockAds) extraRules.push("DOMAIN-KEYWORD,ads,REJECT", "DOMAIN-SUFFIX,doubleclick.net,REJECT");
-            if(injectSosmed) extraRules.push(`DOMAIN-SUFFIX,whatsapp.com,${groupName} (AUTO)`, `DOMAIN-KEYWORD,whatsapp,${groupName} (AUTO)`, `DOMAIN-SUFFIX,tiktokv.com,${groupName} (AUTO)`);
-            const rulesStr = JSON.stringify(extraRules);
-
-            // Build Groups
-            const activeModesArr = Array.from(activeModes);
-            const groupsStr = activeModesArr.map(mode => {
-                let niceName = mode === 'url-test' ? "AUTO" : mode === 'select' ? "MANUAL" : mode === 'load-balance' ? "LB" : "FALLBACK";
-                return `{ "name": "${groupName} (${niceName})", "type": "${mode}", "url": "http://www.gstatic.com/generate_204", "interval": ${interval}, ${mode === 'load-balance' ? '"strategy": "consistent-hashing",' : ''} "proxies": proxies.map(p => p.name) }`;
-            }).join(",\n    ");
-
-            // Final Template
-            const finalScript = `// FlyClash Converter Override
-// Dev: Itsbad
-// Modes: ${activeModesArr.join(', ')}
-// Generated: ${new Date().toLocaleString()}
-
-function main(config) {
-    const proxies = ${JSON.stringify(nodes, null, 2)};
-    config.proxies = (config.proxies || []).concat(proxies);
-    
-    const newGroups = [
-    ${groupsStr}
-    ];
-
-    if (!config['proxy-groups']) config['proxy-groups'] = [];
-    ${topPrio ? "config['proxy-groups'].unshift(...newGroups);" : "config['proxy-groups'].push(...newGroups);"}
-
-    config['allow-lan'] = ${allowLan};
-    config['mixed-port'] = ${mixedPort};
-    config['ipv6'] = false;
-
-    ${dnsConfig}
-
-    const newRules = ${rulesStr};
-    if(newRules.length > 0) config.rules = newRules.concat(config.rules || []);
-
-    // Add to existing groups
-    config['proxy-groups'].forEach(g => {
-        if (g.type === 'select' && !newGroups.find(ng => ng.name === g.name)) {
-            newGroups.forEach(ng => g.proxies.push(ng.name));
-        }
+  // Mode buttons toggle
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      if (ev.target && ev.target.dataset && ev.target.dataset.help) return; // help button
+      const mode = btn.dataset.mode;
+      if (activeModes.has(mode)) {
+        if (activeModes.size > 1) { activeModes.delete(mode); btn.classList.remove('active'); }
+      } else { activeModes.add(mode); btn.classList.add('active'); }
+      updateActiveModesText();
     });
+  });
 
-    return config;
-}`;
+  // Help buttons
+  document.querySelectorAll('.help-btn').forEach(h => h.addEventListener('click', (ev) => {
+    const key = ev.target.dataset.help;
+    const kmap = {auto:'auto', manual:'manual', lb:'lb', fallback:'fallback', ads:'ads', custom:'custom'};
+    const d = helpTexts[kmap[key] || 'auto'];
+    openHelp(d.title, d.body);
+    ev.stopPropagation();
+  }));
 
-            document.getElementById('output-area').value = finalScript;
-        }
+  function updateActiveModesText() {
+    const arr = Array.from(activeModes);
+    document.getElementById('active-modes-text').innerText = arr.map(a => {
+      if (a === 'url-test') return 'Auto Ping';
+      if (a === 'select') return 'Manual';
+      if (a === 'load-balance') return 'LoadBalance';
+      if (a === 'fallback') return 'Fallback';
+      if (a === 'block-ads') return 'BlockAds';
+      return a;
+    }).join(' • ');
+    document.getElementById('modes-pill').innerText = document.getElementById('active-modes-text').innerText;
+  }
 
-        function copyText() {
-            const txt = document.getElementById('output-area');
-            txt.select();
-            document.execCommand('copy');
-            alert("Berhasil disalin!");
-        }
+  // DNS mode change
+  function onDnsModeChange(){
+    const val = document.getElementById('dns-mode').value;
+    const custom = document.getElementById('custom-dns');
+    if (val === 'custom') custom.classList.remove('hidden'); else custom.classList.add('hidden');
+  }
+  window.onDnsModeChange = onDnsModeChange;
 
-        function downloadFile() {
-            const txt = document.getElementById('output-area').value;
-            const blob = new Blob([txt], { type: "text/javascript" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = 'flyclash-override.js';
-            a.click();
-        }
-    </script>
+  // Help modal
+  function openHelp(title, body){
+    document.getElementById('help-title').innerText = title;
+    document.getElementById('help-desc').innerText = body;
+    document.getElementById('help-modal').classList.remove('hidden');
+  }
+  function closeHelp(){ document.getElementById('help-modal').classList.add('hidden'); }
+  window.openHelp = openHelp; window.closeHelp = closeHelp;
+
+  // Parse helpers
+  function tryAtob(s){ try { return atob(s); } catch(e){ return null; } }
+  function isBase64(s){ try { return btoa(atob(s)) === s; } catch(e){ return false; } }
+
+  function parseVmess(line, idx) {
+    try {
+      const b = line.replace(/^vmess:\/\//i, '');
+      const dec = b.trim().startsWith('{') ? b : tryAtob(b);
+      if (!dec) return null;
+      const j = JSON.parse(dec);
+      return {
+        name: j.ps || `vmess-${idx}`,
+        type: 'vmess',
+        server: j.add || j.vnext?.[0]?.address || '',
+        port: parseInt(j.port || j.vnext?.[0]?.port || 443),
+        uuid: j.id || j.uuid || '',
+        alterId: parseInt(j.aid || 0),
+        network: j.net || j.network || 'ws',
+        path: j.path || (j.ws && j.ws.path) || '/',
+        host: j.host || (j.ws && j.ws.headers && (j.ws.headers.Host || j.ws.headers.host)) || j.sni || '',
+        tls: j.tls === 'tls' || j.tls === true || false,
+        raw: line
+      };
+    } catch (e) { return null; }
+  }
+
+  function parseVlessOrTrojan(line, idx) {
+    try {
+      const url = new URL(line);
+      const isVless = line.startsWith('vless://');
+      const params = url.searchParams;
+      const obj = {
+        name: decodeURIComponent(url.hash?.slice(1)) || `${isVless ? 'vless' : 'trojan'}-${idx}`,
+        type: isVless ? 'vless' : 'trojan',
+        server: url.hostname,
+        port: parseInt(url.port || 443),
+        uuid: isVless ? url.username : undefined,
+        password: !isVless ? url.username : undefined,
+        network: params.get('type') || params.get('net') || params.get('network') || 'tcp',
+        path: params.get('path') || '/',
+        sni: params.get('sni') || params.get('host') || '',
+        tls: params.get('security') === 'tls' || params.get('security') === 'reality' || false,
+        raw: line
+      };
+      return obj;
+    } catch (e) { return null; }
+  }
+
+  function parseSS(line, idx) {
+    try {
+      // support ss://base64 or ss://method:pass@host:port#name
+      const s = line.replace(/^ss:\/\//i, '');
+      if (s.includes('@') && !s.startsWith('@')) {
+        const hashIdx = s.indexOf('#');
+        const beforeHash = hashIdx === -1 ? s : s.slice(0, hashIdx);
+        const name = hashIdx === -1 ? undefined : decodeURIComponent(s.slice(hashIdx + 1));
+        const at = beforeHash.indexOf('@');
+        const methods = beforeHash.slice(0, at);
+        const hostport = beforeHash.slice(at + 1);
+        const colon = hostport.lastIndexOf(':');
+        const host = colon === -1 ? hostport : hostport.slice(0, colon);
+        const port = colon === -1 ? 8388 : parseInt(hostport.slice(colon + 1), 10);
+        const method = methods.split(':')[0];
+        const password = methods.split(':')[1] || '';
+        return { name: name || `${host}:${port}`, type: 'shadowsocks', server: host, port, cipher: method, password, raw: line };
+      } else {
+        const base = s.split('#')[0];
+        const dec = tryAtob(base);
+        if (!dec) return null;
+        const at = dec.indexOf('@');
+        const methods = dec.slice(0, at);
+        const hostport = dec.slice(at + 1);
+        const colon = hostport.lastIndexOf(':');
+        const host = colon === -1 ? hostport : hostport.slice(0, colon);
+        const port = colon === -1 ? 8388 : parseInt(hostport.slice(colon + 1), 10);
+        const method = methods.split(':')[0];
+        const password = methods.split(':')[1] || '';
+        return { name: s.includes('#') ? decodeURIComponent(s.split('#')[1]) : `${host}:${port}`, type: 'shadowsocks', server: host, port, cipher: method, password, raw: line };
+      }
+    } catch (e) { return null; }
+  }
+
+  function parseAny(line, idx) {
+    if (!line || !line.trim()) return null;
+    const l = line.trim();
+    if (/^vmess:\/\//i.test(l)) return parseVmess(l, idx);
+    if (/^vless:\/\//i.test(l) || /^trojan:\/\//i.test(l)) return parseVlessOrTrojan(l, idx);
+    if (/^ss:\/\//i.test(l)) return parseSS(l, idx);
+    // maybe vmess base64 without prefix
+    if (isBase64(l)) {
+      try { return parseVmess('vmess://' + l, idx); } catch(e) {}
+    }
+    return null;
+  }
+
+  // Analyze
+  function analyzeConfigs() {
+    const lines = inputEl.value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+    let vm=0, vl=0, tr=0;
+    lines.forEach((l,i) => {
+      const p = parseAny(l, i+1);
+      if (!p) return;
+      if (p.type === 'vmess') vm++;
+      if (p.type === 'vless') vl++;
+      if (p.type === 'trojan' || p.type === 'shadowsocks') tr++;
+    });
+    counterEl.innerText = `${lines.length} nodes`;
+    vmCount.innerText = vm; vlCount.innerText = vl; trCount.innerText = tr;
+    return { total: lines.length, vm, vl, tr };
+  }
+
+  analyzeBtn.addEventListener('click', analyzeConfigs);
+  clearBtn.addEventListener('click', () => { inputEl.value=''; analyzeConfigs(); outputArea.value=''; yamlPreview.classList.add('hidden'); });
+
+  // Generate
+  document.getElementById('generate-btn').addEventListener('click', async () => {
+    try {
+      // loading UI
+      document.getElementById('gen-loading').classList.remove('hidden');
+      document.getElementById('gen-text').innerText = 'Generating...';
+      const res = generateScript();
+      // done
+      document.getElementById('gen-loading').classList.add('hidden');
+      document.getElementById('gen-text').innerText = 'Generate Script';
+      if (res) {
+        outputArea.value = res.js;
+        yamlPreview.textContent = res.yaml;
+        yamlPreview.classList.remove('hidden');
+        document.getElementById('out-nodes').innerText = res.nodes;
+        document.getElementById('out-rules').innerText = res.rules;
+      }
+    } catch (e) {
+      document.getElementById('gen-loading').classList.add('hidden');
+      document.getElementById('gen-text').innerText = 'Generate Script';
+      console.error(e);
+      alert('Error saat generate: ' + (e.message||e));
+    }
+  });
+
+  // Build override & YAML
+  function generateScript() {
+    const lines = inputEl.value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+    if (lines.length === 0) { alert('Masukkan minimal 1 link konfigurasi.'); return null; }
+
+    const parsed = lines.map((l,i) => parseAny(l, i+1)).filter(Boolean);
+    if (parsed.length === 0) { alert('Tidak ada link valid!'); return null; }
+
+    // options
+    const opts = {
+      modes: Array.from(activeModes),
+      interval: Math.max(1, parseInt(document.getElementById('interval').value || 5)),
+      groupName: document.getElementById('group-name').value || 'FLYCLASH',
+      mixedPort: parseInt(document.getElementById('mixed-port').value || 7890),
+      allowLan: document.getElementById('allow-lan').checked,
+      skipCert: document.getElementById('skip-cert').checked,
+      blockAds: document.getElementById('block-ads').checked,
+      topPrio: document.getElementById('top-prio').checked,
+      injectSosmed: document.getElementById('inject-sosmed').checked,
+      dnsMode: document.getElementById('dns-mode').value,
+      customDns: document.getElementById('custom-dns').value
+    };
+
+    // convert parsed nodes -> clash-friendly objects
+    const clashNodes = parsed.map((p, idx) => {
+      const baseName = p.name || (`NODE-${idx+1}`);
+      if (p.type === 'vmess') {
+        return {
+          name: baseName,
+          type: 'vmess',
+          server: p.server,
+          port: p.port,
+          uuid: p.uuid,
+          alterId: p.alterId || 0,
+          tls: !!p.tls,
+          'skip-cert-verify': opts.skipCert,
+          network: p.network || 'ws',
+          'ws-opts': p.network === 'ws' ? { path: p.path || '/', headers: { Host: p.host || '' } } : undefined
+        };
+      }
+      if (p.type === 'vless') {
+        return {
+          name: baseName,
+          type: 'vless',
+          server: p.server,
+          port: p.port || 443,
+          uuid: p.uuid || '',
+          tls: !!p.tls,
+          'skip-cert-verify': opts.skipCert,
+          servername: p.sni || '',
+          network: p.network || 'ws',
+          'ws-opts': p.network === 'ws' ? { path: p.path || '/', headers: { Host: p.sni || '' } } : undefined
+        };
+      }
+      if (p.type === 'trojan') {
+        return {
+          name: baseName,
+          type: 'trojan',
+          server: p.server,
+          port: p.port || 443,
+          password: p.password || '',
+          tls: true,
+          'skip-cert-verify': opts.skipCert,
+          servername: p.sni || ''
+        };
+      }
+      if (p.type === 'shadowsocks') {
+        return {
+          name: baseName,
+          type: 'shadowsocks',
+          server: p.server,
+          port: p.port,
+          cipher: p.cipher,
+          password: p.password
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    // VALIDATION & FIXES to avoid FlyClash bengong
+    const dedupMap = new Map();
+    const nodes = [];
+    for (const n of clashNodes) {
+      const key = `${n.type}|${n.server}|${n.port}`;
+      if (!dedupMap.has(key)) { dedupMap.set(key, true); nodes.push(n); }
+    }
+    if (nodes.length === 0) { alert('Semua node duplikat atau tidak valid.'); return null; }
+    if (nodes.length > 120) { nodes.length = 120; alert('List terlalu panjang; dipangkas ke 120 node untuk stabilitas.'); }
+
+    // Build DNS config snippet
+    let dnsSnippet = 'config.dns = config.dns || {}; config.dns.enable = true; config.dns.nameserver = ["223.5.5.5","8.8.8.8"];';
+    if (opts.dnsMode.startsWith('preset')) {
+      const map = { 'preset-cloudflare': ['1.1.1.1','1.0.0.1'], 'preset-google': ['8.8.8.8','8.8.4.4'], 'preset-quad9': ['9.9.9.9','149.112.112.112'] };
+      dnsSnippet = `config.dns = config.dns || {}; config.dns.enable = true; config.dns.nameserver = ${JSON.stringify(map[opts.dnsMode])};`;
+    } else if (opts.dnsMode === 'fake-ip') {
+      // Fake-ip settings (note: some FlyClash versions may not support fake-ip; warn user)
+      dnsSnippet = `config.dns = { enable: true, \"enhanced-mode\": \"fake-ip\", \"fake-ip-range\": \"198.18.0.1/16\", nameserver: ["8.8.8.8","1.1.1.1"] };`;
+    } else if (opts.dnsMode === 'custom' && opts.customDns.trim()) {
+      const arr = opts.customDns.split(',').map(s => s.trim()).filter(Boolean);
+      dnsSnippet = `config.dns = config.dns || {}; config.dns.enable = true; config.dns.nameserver = ${JSON.stringify(arr)};`;
+    }
+
+    // Build proxy groups based on active modes
+    const pNames = nodes.map(n => n.name);
+    const groups = [];
+    if (opts.modes.includes('url-test')) {
+      groups.push({ name: `${opts.groupName} • AUTO`, type: 'url-test', url: 'https://www.google.com/generate_204', interval: opts.interval, proxies: pNames });
+    }
+    if (opts.modes.includes('load-balance')) {
+      groups.push({ name: `${opts.groupName} • LB`, type: 'load-balance', strategy: 'round-robin', proxies: pNames });
+    }
+    if (opts.modes.includes('fallback')) {
+      groups.push({ name: `${opts.groupName} • FALLBACK`, type: 'fallback', url: 'https://www.google.com/generate_204', interval: opts.interval, proxies: pNames });
+    }
+    if (opts.modes.includes('select')) {
+      groups.push({ name: `${opts.groupName} • MANUAL`, type: 'select', proxies: pNames });
+    }
+    if (groups.length === 0) groups.push({ name: opts.groupName, type: 'select', proxies: pNames });
+
+    // Rules (trimmed)
+    const adRules = opts.blockAds ? [
+      "DOMAIN-SUFFIX,doubleclick.net,REJECT",
+      "DOMAIN-KEYWORD,ads,REJECT"
+    ] : [];
+    if (opts.injectSosmed) {
+      adRules.push(`DOMAIN-SUFFIX,whatsapp.com,${groups[0].name}`);
+      adRules.push(`DOMAIN-SUFFIX,tiktokv.com,${groups[0].name}`);
+    }
+
+    // Build JS override
+    const jsLines = [];
+    jsLines.push('// FlyClash override generated by Itsbad-');
+    jsLines.push(`// Modes: ${opts.modes.join(', ')}`);
+    jsLines.push('function main(config) {');
+    jsLines.push('  config = config || {};');
+    jsLines.push('  config.proxies = config.proxies || [];');
+    jsLines.push('  // Append generated proxies');
+    jsLines.push('  config.proxies.push(' + nodes.map(n => JSON.stringify(n, null, 2)).join(',\n  ') + ');');
+    jsLines.push('');
+    jsLines.push('  // Proxy groups');
+    jsLines.push('  config["proxy-groups"] = config["proxy-groups"] || [];');
+    groups.forEach(g => { jsLines.push('  config["proxy-groups"].push(' + JSON.stringify(g, null, 2) + ');'); });
+    jsLines.push('');
+    jsLines.push(`  config["allow-lan"] = ${!!opts.allowLan};`);
+    jsLines.push(`  config["mixed-port"] = ${Number(opts.mixedPort)};`);
+    jsLines.push('  config.ipv6 = false;');
+    jsLines.push('');
+    jsLines.push('  // DNS Configuration');
+    jsLines.push('  ' + dnsSnippet);
+    jsLines.push('');
+    if (adRules.length) {
+      jsLines.push('  config.rules = config.rules || [];');
+      adRules.forEach(r => jsLines.push('  config.rules.push(' + JSON.stringify(r) + ');'));
+    }
+    jsLines.push('');
+    jsLines.push('  // Try inject into existing selectors (safe, non-destructive)');
+    jsLines.push('  try { (config["proxy-groups"]||[]).forEach(g => { if (g.type === "select" && !g.proxies.includes("' + groups[0].name + '")) g.proxies.push("' + groups[0].name + '"); }); } catch(e){}');
+    jsLines.push('');
+    jsLines.push('  return config;');
+    jsLines.push('}');
+
+    const finalJS = jsLines.join('\n');
+
+    // YAML preview minimal
+    const yaml = [
+      `port: ${opts.mixedPort}`,
+      `allow-lan: ${opts.allowLan}`,
+      `dns:`,
+      `  enable: true`,
+      `  nameserver: ${JSON.stringify((opts.dnsMode.startsWith('preset') ? (opts.dnsMode === 'preset-google' ? ['8.8.8.8'] : (opts.dnsMode === 'preset-quad9' ? ['9.9.9.9'] : ['1.1.1.1'])) : (opts.dnsMode==='custom' ? (opts.customDns.split(',').map(s=>s.trim())) : ['223.5.5.5','8.8.8.8'])))}`,
+      `proxies:`,
+      ...nodes.map(n => `  - name: "${n.name}"\n    type: ${n.type}\n    server: ${n.server}\n    port: ${n.port}`),
+      `proxy-groups:`,
+      ...groups.map(g => `  - name: "${g.name}"\n    type: ${g.type}\n    proxies: [${g.proxies.map(p=>`"${p}"`).join(', ')}]`)
+    ].join('\n');
+
+    // Return results
+    return { js: finalJS, yaml, nodes: nodes.length, rules: adRules.length };
+  }
+
+  // Copy & Save handlers
+  document.getElementById('copy-btn').addEventListener('click', () => {
+    outputArea.select(); document.execCommand('copy'); alert('Override JS disalin ke clipboard.');
+  });
+  document.getElementById('save-btn').addEventListener('click', () => {
+    const txt = outputArea.value;
+    if (!txt) { alert('Belum ada output.'); return; }
+    const a = document.createElement('a'); const blob = new Blob([txt], { type:'application/javascript' });
+    a.href = URL.createObjectURL(blob); a.download = 'flyclash-override.js'; a.click();
+  });
+  document.getElementById('clear-output').addEventListener('click', () => { outputArea.value=''; yamlPreview.classList.add('hidden'); });
+
+  // Export JSON / YAML
+  document.getElementById('export-json').addEventListener('click', () => {
+    const txt = outputArea.value; if (!txt) return alert('Generate dulu');
+    const jsonObj = { override: txt }; downloadBlob(JSON.stringify(jsonObj, null, 2), 'flyclash-override.json', 'application/json');
+  });
+  document.getElementById('export-yaml').addEventListener('click', () => {
+    const yaml = yamlPreview.textContent; if (!yaml) return alert('Generate dulu'); downloadBlob(yaml, 'clash-preview.yaml', 'text/yaml');
+  });
+
+  function downloadBlob(content, filename, mime) {
+    const a = document.createElement('a'); const blob = new Blob([content], { type: mime });
+    a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+  }
+
+  // Simple UX: update activeModes text on load
+  updateActiveModesText();
+
+  // initial analyze if any content
+  analyzeConfigs();
+
+  </script>
+
 </body>
 </html>
