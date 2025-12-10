@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlyClash Override - Network Edition</title>
+    <title>FlyClash Override - Documentation Edition</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/%3E%3C/svg%3E">
 
@@ -29,7 +29,8 @@
         .input-dark:focus { border-color: #6366f1; background: #151518; }
         
         /* Label Styles */
-        .lbl { font-size: 10px; color: #71717a; font-weight: bold; margin-bottom: 4px; display: block; text-transform: uppercase; }
+        .lbl-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .lbl { font-size: 10px; color: #71717a; font-weight: bold; text-transform: uppercase; }
         
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -41,13 +42,23 @@
         .check-item:hover { border-color: #6366f1; background: rgba(99, 102, 241, 0.1); }
         .check-item input { accent-color: #6366f1; width: 14px; height: 14px; cursor: pointer; }
         
-        /* Help Button */
-        .help-btn { color: #52525b; padding: 0 5px; font-weight: bold; font-size: 12px; cursor: pointer; }
-        .help-btn:hover { color: #fff; }
+        /* Help Button (!) */
+        .help-icon { 
+            width: 14px; height: 14px; 
+            border-radius: 50%; 
+            background: #27272a; 
+            color: #a1a1aa; 
+            font-size: 9px; 
+            font-weight: bold; 
+            display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; transition: 0.2s; 
+        }
+        .help-icon:hover { background: #6366f1; color: white; }
 
         /* Mode Button */
-        .mode-btn { transition: 0.2s; border: 1px solid transparent; }
+        .mode-btn { transition: 0.2s; border: 1px solid transparent; position: relative; }
         .mode-btn.active { background: rgba(99, 102, 241, 0.15); border-color: #6366f1; color: white; }
+        .mode-help { position: absolute; top: 4px; right: 4px; }
         
         /* Tabs */
         .tab-btn { padding: 8px 15px; font-size: 11px; font-weight: bold; color: #52525b; border-bottom: 2px solid transparent; transition: 0.2s; }
@@ -56,13 +67,16 @@
         
         /* Section Divider */
         .divider { border-bottom: 1px solid #27272a; padding-bottom: 5px; margin-bottom: 10px; margin-top: 15px; color: #a1a1aa; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 5px; }
+        
+        /* Modal */
+        #help-modal { transition: opacity 0.2s; }
     </style>
 </head>
 <body class="min-h-screen p-2 md:p-6">
 
     <div class="max-w-7xl mx-auto mb-4 flex justify-between items-center px-2">
         <h1 class="text-xl font-bold text-white flex items-center gap-2">
-            <span class="text-primary text-2xl">⚡</span> FlyClash <span class="text-zinc-500 font-normal">Network Edition</span>
+            <span class="text-primary text-2xl">⚡</span> FlyClash <span class="text-zinc-500 font-normal">Docs Edition</span>
         </h1>
         <div class="text-[10px] font-mono text-zinc-600 border border-zinc-900 px-2 py-1 rounded bg-black/20">Dev: Itsbad</div>
     </div>
@@ -86,15 +100,19 @@
                 <label class="text-xs font-bold text-zinc-400 mb-3 block">2. SELECT MODE</label>
                 <div class="grid grid-cols-4 gap-2">
                     <div onclick="toggleMode('url-test')" id="btn-url-test" class="mode-btn glass p-2 rounded flex flex-col items-center cursor-pointer active text-center">
+                        <span class="mode-help help-icon" onclick="showHelp(event, 'mode_auto')">!</span>
                         <span class="text-lg mb-1">⚡</span> <span class="text-[10px] font-bold">AUTO</span>
                     </div>
                     <div onclick="toggleMode('select')" id="btn-select" class="mode-btn glass p-2 rounded flex flex-col items-center cursor-pointer text-center">
+                        <span class="mode-help help-icon" onclick="showHelp(event, 'mode_manual')">!</span>
                         <span class="text-lg mb-1">⚙️</span> <span class="text-[10px] font-bold">MANUAL</span>
                     </div>
                     <div onclick="toggleMode('load-balance')" id="btn-load-balance" class="mode-btn glass p-2 rounded flex flex-col items-center cursor-pointer text-center">
+                        <span class="mode-help help-icon" onclick="showHelp(event, 'mode_lb')">!</span>
                         <span class="text-lg mb-1">🚀</span> <span class="text-[10px] font-bold">LB</span>
                     </div>
                     <div onclick="toggleMode('fallback')" id="btn-fallback" class="mode-btn glass p-2 rounded flex flex-col items-center cursor-pointer text-center">
+                        <span class="mode-help help-icon" onclick="showHelp(event, 'mode_fallback')">!</span>
                         <span class="text-lg mb-1">🛡️</span> <span class="text-[10px] font-bold">FALLBACK</span>
                     </div>
                 </div>
@@ -108,42 +126,72 @@
 
                 <div class="divider">CONNECTION</div>
                 <div class="grid grid-cols-3 gap-2 mb-2">
-                    <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="always-reconnect" checked><span>Always Reconnect</span></div></label>
-                    <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="wakelock" checked><span>WakeLock ON</span></div></label>
-                    <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="allow-lan" checked><span>Allow LAN</span></div></label>
+                    <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="always-reconnect" checked><span>Always Reconnect</span></div><span class="help-icon" onclick="showHelp(event, 'always_reconnect')">!</span></label>
+                    <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="wakelock" checked><span>WakeLock ON</span></div><span class="help-icon" onclick="showHelp(event, 'wakelock')">!</span></label>
+                    <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="allow-lan" checked><span>Allow LAN</span></div><span class="help-icon" onclick="showHelp(event, 'allow_lan')">!</span></label>
                 </div>
 
                 <div class="divider">PORTS & TUN</div>
                 <div class="grid grid-cols-4 gap-3 mb-2">
-                    <div><label class="lbl">HTTP PORT</label><input type="number" id="http-port" value="8800" class="input-dark"></div>
-                    <div><label class="lbl">SOCKS5</label><input type="number" id="socks-port" value="3080" class="input-dark"></div>
-                    <div><label class="lbl">UDPGW</label><input type="number" id="udpgw" value="7300" class="input-dark"></div>
-                    <div><label class="lbl">MTU</label><input type="number" id="mtu" value="1500" class="input-dark"></div>
+                    <div>
+                        <div class="lbl-container"><span class="lbl">HTTP PORT</span><span class="help-icon" onclick="showHelp(event, 'http_port')">!</span></div>
+                        <input type="number" id="http-port" value="8800" class="input-dark">
+                    </div>
+                    <div>
+                        <div class="lbl-container"><span class="lbl">SOCKS5</span><span class="help-icon" onclick="showHelp(event, 'socks_port')">!</span></div>
+                        <input type="number" id="socks-port" value="3080" class="input-dark">
+                    </div>
+                    <div>
+                        <div class="lbl-container"><span class="lbl">UDPGW</span><span class="help-icon" onclick="showHelp(event, 'udpgw')">!</span></div>
+                        <input type="number" id="udpgw" value="7300" class="input-dark">
+                    </div>
+                    <div>
+                        <div class="lbl-container"><span class="lbl">MTU</span><span class="help-icon" onclick="showHelp(event, 'mtu')">!</span></div>
+                        <input type="number" id="mtu" value="1500" class="input-dark">
+                    </div>
                 </div>
 
                 <div class="divider">DNS CONFIGURATION</div>
                 <div class="grid grid-cols-3 gap-3 mb-2">
-                    <div><label class="lbl">DNS PORT</label><input type="number" id="dns-port" value="7200" class="input-dark"></div>
-                    <div class="col-span-2"><label class="lbl">DNS PRIMARY</label><input type="text" id="dns-primary" value="1.1.1.1" class="input-dark"></div>
+                    <div>
+                        <div class="lbl-container"><span class="lbl">DNS PORT</span><span class="help-icon" onclick="showHelp(event, 'dns_port')">!</span></div>
+                        <input type="number" id="dns-port" value="7200" class="input-dark">
+                    </div>
+                    <div class="col-span-2">
+                        <div class="lbl-container"><span class="lbl">DNS PRIMARY</span><span class="help-icon" onclick="showHelp(event, 'dns_pri')">!</span></div>
+                        <input type="text" id="dns-primary" value="1.1.1.1" class="input-dark">
+                    </div>
                 </div>
                 <div class="grid grid-cols-3 gap-3 mb-2">
                     <div class="col-span-1 pt-4">
-                         <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="fake-ip" checked><span>Fake-IP</span></div></label>
+                         <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="fake-ip" checked><span>Fake-IP</span></div><span class="help-icon" onclick="showHelp(event, 'fake_ip')">!</span></label>
                     </div>
-                    <div class="col-span-2"><label class="lbl">DNS SECONDARY</label><input type="text" id="dns-secondary" value="1.0.0.1" class="input-dark"></div>
+                    <div class="col-span-2">
+                        <div class="lbl-container"><span class="lbl">DNS SECONDARY</span><span class="help-icon" onclick="showHelp(event, 'dns_sec')">!</span></div>
+                        <input type="text" id="dns-secondary" value="1.0.0.1" class="input-dark">
+                    </div>
                 </div>
 
                 <div class="divider">TIMING & RECONNECT</div>
                 <div class="grid grid-cols-3 gap-3">
-                    <div><label class="lbl">PING INTERVAL (ms)</label><input type="number" id="interval" value="1000" class="input-dark"></div>
-                    <div><label class="lbl">TIMEOUT (ms)</label><input type="number" id="timeout" value="3000" class="input-dark"></div>
-                    <div><label class="lbl">AUTO RECONNECT</label><input type="text" id="reconnect-count" value="3x" class="input-dark text-center"></div>
+                    <div>
+                        <div class="lbl-container"><span class="lbl">INTERVAL</span><span class="help-icon" onclick="showHelp(event, 'interval')">!</span></div>
+                        <input type="number" id="interval" value="1000" class="input-dark">
+                    </div>
+                    <div>
+                        <div class="lbl-container"><span class="lbl">TIMEOUT</span><span class="help-icon" onclick="showHelp(event, 'timeout')">!</span></div>
+                        <input type="number" id="timeout" value="3000" class="input-dark">
+                    </div>
+                    <div>
+                        <div class="lbl-container"><span class="lbl">RECONNECT</span><span class="help-icon" onclick="showHelp(event, 'reconnect')">!</span></div>
+                        <input type="text" id="reconnect-count" value="3x" class="input-dark text-center">
+                    </div>
                 </div>
 
                 <div class="divider">EXTRAS</div>
                 <div class="grid grid-cols-2 gap-2">
-                    <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="skip-cert" checked><span>Skip Cert Verify</span></div></label>
-                    <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="block-ads"><span>Block Ads</span></div></label>
+                    <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="skip-cert" checked><span>Skip Cert Verify</span></div><span class="help-icon" onclick="showHelp(event, 'skip_cert')">!</span></label>
+                    <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="block-ads"><span>Block Ads</span></div><span class="help-icon" onclick="showHelp(event, 'block_ads')">!</span></label>
                 </div>
 
                 <button onclick="generateScript()" class="w-full py-3 bg-primary hover:bg-indigo-500 text-white font-bold rounded mt-5 shadow-lg shadow-indigo-500/20 transition text-sm">GENERATE CONFIG</button>
@@ -184,10 +232,48 @@
         </div>
     </div>
 
+    <div id="help-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-6 backdrop-blur-sm" onclick="closeHelp()">
+        <div class="bg-[#18181b] border border-zinc-700 w-full max-w-sm rounded-xl p-6 shadow-2xl relative" onclick="event.stopPropagation()">
+            <h3 id="modal-title" class="text-lg font-bold text-primary mb-2">Title</h3>
+            <p id="modal-desc" class="text-sm text-zinc-300 leading-relaxed whitespace-pre-line mb-6">Description goes here.</p>
+            <button onclick="closeHelp()" class="absolute top-4 right-4 text-zinc-500 hover:text-white">&times;</button>
+            <button onclick="closeHelp()" class="w-full py-2 bg-zinc-800 rounded text-xs font-bold text-zinc-300 hover:bg-zinc-700">TUTUP PENJELASAN</button>
+        </div>
+    </div>
+
     <script>
         // State
         const activeModes = new Set(['url-test']);
         
+        // --- DATA PENJELASAN (DOKUMENTASI) ---
+        const helpData = {
+            'mode_auto': {t: "Auto Ping (Url-Test)", d: "Mode ini akan mengetes ping semua akun secara berkala, lalu otomatis menggunakan akun dengan ping terendah (tercepat)."},
+            'mode_manual': {t: "Manual Select", d: "Membuat grup di mana Anda harus memilih sendiri server yang ingin digunakan di menu Proxy FlyClash."},
+            'mode_lb': {t: "Load Balance", d: "Menggabungkan bandwidth beberapa akun. Traffic dibagi rata ke semua server. Bisa meningkatkan speed download."},
+            'mode_fallback': {t: "Fallback", d: "Sistem cadangan. Selalu menggunakan Server 1. Jika Server 1 mati, otomatis pindah ke Server 2."},
+            
+            'always_reconnect': {t: "Always Reconnect", d: "Memerintahkan aplikasi untuk otomatis menghubungkan ulang VPN jika koneksi terputus tiba-tiba."},
+            'wakelock': {t: "WakeLock", d: "Mencegah CPU HP masuk mode tidur (sleep) saat layar mati, agar koneksi VPN tidak putus di background."},
+            'allow_lan': {t: "Allow LAN", d: "Mengizinkan perangkat lain (HP/Laptop) yang terhubung ke Wifi/Hotspot Anda untuk ikut menggunakan VPN ini."},
+            
+            'http_port': {t: "HTTP Port", d: "Port untuk protokol HTTP Proxy. Default: 8800."},
+            'socks_port': {t: "SOCKS5 Port", d: "Port untuk protokol SOCKS5 Proxy. Default: 3080."},
+            'udpgw': {t: "UDPGW Port", d: "UDP Gateway. Sangat penting untuk Game Online dan Call WA. Default: 7300."},
+            'mtu': {t: "MTU", d: "Maximum Transmission Unit. Ukuran paket data. Standar 1500. Jika sering RTO, coba turunkan ke 1400 atau 1280."},
+            
+            'dns_port': {t: "DNS Port", d: "Port internal untuk DNS Server Clash."},
+            'dns_pri': {t: "DNS Primary", d: "DNS Utama. Disarankan 1.1.1.1 (Cloudflare) atau 8.8.8.8 (Google)."},
+            'dns_sec': {t: "DNS Secondary", d: "DNS Cadangan jika DNS utama gagal."},
+            'fake_ip': {t: "Fake-IP Mode", d: "Mengembalikan IP palsu ke aplikasi agar resolving DNS dilakukan di remote server. Ampuh mengatasi 'Connected No Internet'."},
+            
+            'interval': {t: "Ping Interval", d: "Seberapa sering (ms) Clash mengecek ping server. 1000ms = 1 detik. Semakin kecil semakin responsif, tapi boros baterai."},
+            'timeout': {t: "Timeout", d: "Batas waktu tunggu (ms) sebelum koneksi dianggap gagal (RTO)."},
+            'reconnect': {t: "Auto Reconnect", d: "Jumlah percobaan koneksi ulang otomatis sebelum menyerah."},
+            
+            'skip_cert': {t: "Skip Certificate Verify", d: "Melewati verifikasi sertifikat SSL. Wajib ON untuk akun gratisan/self-signed."},
+            'block_ads': {t: "Block Ads", d: "Menambahkan aturan otomatis untuk memblokir domain iklan (Google Ads, dll)."}
+        };
+
         // Functions
         function toggleMode(mode) {
             const btn = document.getElementById('btn-' + mode);
@@ -213,6 +299,18 @@
             document.getElementById('view-' + tab).classList.remove('hidden');
             document.getElementById('tab-' + tab).classList.add('active');
         }
+
+        function showHelp(e, key) {
+            e.preventDefault(); e.stopPropagation();
+            const data = helpData[key];
+            if(data) {
+                document.getElementById('modal-title').innerText = data.t;
+                document.getElementById('modal-desc').innerText = data.d;
+                document.getElementById('help-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeHelp() { document.getElementById('help-modal').classList.add('hidden'); }
 
         // --- PARSER ---
         function parseConfig(line, index) {
@@ -252,7 +350,7 @@
                 return;
             }
 
-            // GET ALL SETTINGS
+            // GET SETTINGS
             const alwaysReconnect = document.getElementById('always-reconnect').checked;
             const wakelock = document.getElementById('wakelock').checked;
             const allowLan = document.getElementById('allow-lan').checked;
@@ -267,8 +365,8 @@
             const dnsSec = document.getElementById('dns-secondary').value;
             const fakeIp = document.getElementById('fake-ip').checked;
             
-            const interval = document.getElementById('interval').value; // ms
-            const timeout = document.getElementById('timeout').value; // ms
+            const interval = document.getElementById('interval').value;
+            const timeout = document.getElementById('timeout').value;
             const reconnectCount = document.getElementById('reconnect-count').value;
             
             const skipCert = document.getElementById('skip-cert').checked;
@@ -276,15 +374,12 @@
 
             const intervalSec = Math.floor(interval / 1000); 
 
-            // Apply Node Settings
             nodes.forEach(n => {
                 if (skipCert) n['skip-cert-verify'] = true;
                 n.udp = true;
             });
 
-            // ==========================
-            // 1. GENERATE JS OVERRIDE
-            // ==========================
+            // 1. JS
             const activeModesArr = Array.from(activeModes);
             let rulesJS = [];
             if(blockAds) rulesJS.push("DOMAIN-KEYWORD,ads,REJECT", "DOMAIN-SUFFIX,doubleclick.net,REJECT");
@@ -332,7 +427,7 @@ function main(config) {
     // PORTS & TUN
     config['port'] = ${httpPort};
     config['socks-port'] = ${socksPort};
-    config['redir-port'] = ${udpgw}; // Using redir-port for UDPGW emulation
+    config['redir-port'] = ${udpgw};
     config['mixed-port'] = 7890;
     config['allow-lan'] = ${allowLan};
     config['ipv6'] = false;
@@ -374,9 +469,7 @@ function main(config) {
 }`;
             document.getElementById('output-js').value = jsOutput;
 
-            // ==========================
-            // 2. GENERATE YAML CONFIG
-            // ==========================
+            // 2. YAML
             let yaml = `# FlyClash Config - Dev: Itsbad
 # Settings: WakeLock=${wakelock}, Reconnect=${alwaysReconnect} (${reconnectCount})
 # MTU=${mtu}, UDPGW=${udpgw}
