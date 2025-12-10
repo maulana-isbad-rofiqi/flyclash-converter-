@@ -2,11 +2,10 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>FlyClash Converter PRO</title>
-  
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/644/644667.png" type="image/png">
-
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -20,93 +19,108 @@
   <div class="app-container">
     <header class="app-header">
       <div class="brand">
-        <i data-lucide="zap" class="logo-icon"></i>
+        <div class="logo-box"><i data-lucide="zap" class="logo-icon"></i></div>
         <div>
-          <h1>FlyClash Converter <span class="badge-pro">PRO</span></h1>
-          <p class="subtitle">V2Ray to Clash JS Override Generator</p>
+          <h1>FlyClash <span class="badge-pro">PRO</span></h1>
+          <p class="subtitle">Converter & Generator</p>
         </div>
       </div>
       <div class="meta-info">
-        <span class="creator"><i data-lucide="code-2" width="14"></i> Developer: <strong>Itsbad</strong></span>
+        <span class="creator">Dev: <strong>Itsbad</strong></span>
       </div>
     </header>
 
     <main class="main-grid">
       <section class="card input-section">
         <div class="card-header">
-          <h2><i data-lucide="server"></i> Configuration Input</h2>
+          <h2><i data-lucide="server" width="18"></i> Input Config</h2>
+          <button class="info-btn" data-key="input"><i data-lucide="help-circle" width="14"></i></button>
         </div>
         
         <div class="input-wrapper">
-          <textarea id="fc-input" placeholder="Paste link vmess:// vless:// trojan:// ss:// di sini... (Satu link per baris)"></textarea>
+          <textarea id="fc-input" placeholder="Tempel link vmess:// vless:// trojan:// ss:// di sini..."></textarea>
           <div class="input-actions">
-            <button id="fc-clear" class="btn btn-ghost"><i data-lucide="trash-2"></i> Clear</button>
-            <button id="fc-validate" class="btn btn-ghost"><i data-lucide="check-circle"></i> Check</button>
-            <button id="fc-generate" class="btn btn-primary"><i data-lucide="play"></i> Generate Script</button>
+            <button id="fc-clear" class="btn btn-ghost"><i data-lucide="trash-2" width="16"></i></button>
+            <button id="fc-validate" class="btn btn-ghost">Check</button>
+            <button id="fc-generate" class="btn btn-primary"><i data-lucide="play" width="16"></i> Generate</button>
           </div>
         </div>
 
         <div class="settings-grid">
-          <div class="setting-item">
-            <label class="label-with-icon">
-                Mode Strategy 
-                <span class="tooltip" data-tip="Auto: Pilih ping terendah | Manual: Pilih sendiri | LB: Gabung speed | Fallback: Cadangan otomatis">(?)</span>
-            </label>
+          <div class="setting-item full-width">
+            <div class="label-row">
+                <label>Mode Strategy</label>
+                <button class="info-btn" data-key="mode"><i data-lucide="help-circle" width="14"></i></button>
+            </div>
             <div class="select-wrapper">
               <select id="fc-mode">
-                <option value="auto">🚀 Auto Best Ping</option>
-                <option value="manual">👆 Manual Select</option>
-                <option value="loadbalance">⚖️ Load Balance</option>
-                <option value="fallback">🛡️ Failover / Fallback</option>
+                <option value="auto">🚀 Auto Best Ping (Paling Cepat)</option>
+                <option value="manual">👆 Manual Select (Pilih Sendiri)</option>
+                <option value="loadbalance">⚖️ Load Balance (Gabung Speed)</option>
+                <option value="fallback">🛡️ Failover (Cadangan Otomatis)</option>
               </select>
             </div>
           </div>
 
           <div class="setting-group">
             <div class="setting-item">
-              <label class="label-with-icon">
-                  Interval (s) 
-                  <span class="tooltip" data-tip="Jeda waktu antar pengecekan ping (detik)">(?)</span>
-              </label>
+              <div class="label-row">
+                  <label>Interval (s)</label>
+                  <button class="info-btn" data-key="interval"><i data-lucide="help-circle" width="14"></i></button>
+              </div>
               <input id="fc-interval" type="number" min="1" value="5" />
             </div>
             <div class="setting-item">
-              <label>Group Name</label>
+              <div class="label-row">
+                  <label>Group Name</label>
+                  <button class="info-btn" data-key="group"><i data-lucide="help-circle" width="14"></i></button>
+              </div>
               <input id="fc-group" type="text" value="AUTO BEST PING" />
             </div>
           </div>
 
-          <div class="toggles-wrapper">
-            <label class="toggle" title="Abaikan SSL error (Insecure mode)">
-              <input id="fc-skip" type="checkbox" checked />
-              <span class="slider"></span>
-              <span class="label-text">Skip Cert</span>
-            </label>
-            <label class="toggle" title="Blokir domain iklan umum">
-              <input id="fc-ad" type="checkbox" />
-              <span class="slider"></span>
-              <span class="label-text">AdBlock</span>
-            </label>
-            <label class="toggle" title="Otomatis masukkan grup ini ke grup Proxy utama FlyClash">
-              <input id="fc-autoadd" type="checkbox" checked />
-              <span class="slider"></span>
-              <span class="label-text">Auto Insert</span>
-            </label>
+          <div class="toggles-container">
+            <div class="toggle-item">
+                <label class="switch">
+                  <input id="fc-skip" type="checkbox" checked />
+                  <span class="slider"></span>
+                </label>
+                <span class="toggle-label">Skip Cert</span>
+                <button class="info-btn" data-key="skipcert"><i data-lucide="help-circle" width="12"></i></button>
+            </div>
+            
+            <div class="toggle-item">
+                <label class="switch">
+                  <input id="fc-ad" type="checkbox" />
+                  <span class="slider"></span>
+                </label>
+                <span class="toggle-label">AdBlock</span>
+                <button class="info-btn" data-key="adblock"><i data-lucide="help-circle" width="12"></i></button>
+            </div>
+
+            <div class="toggle-item">
+                <label class="switch">
+                  <input id="fc-autoadd" type="checkbox" checked />
+                  <span class="slider"></span>
+                </label>
+                <span class="toggle-label">Auto Insert</span>
+                <button class="info-btn" data-key="autoinsert"><i data-lucide="help-circle" width="12"></i></button>
+            </div>
           </div>
 
           <div id="fc-lb-area" class="setting-item hidden">
-            <label class="label-with-icon">
-                Load Balance Weights
-                <span class="tooltip" data-tip="Contoh: 50,30,20 (Prioritas traffic server)">(?)</span>
-            </label>
-            <input id="fc-lb" placeholder="Leave empty for equal weights" />
+            <div class="label-row">
+                <label>LB Weights</label>
+                <button class="info-btn" data-key="weights"><i data-lucide="help-circle" width="14"></i></button>
+            </div>
+            <input id="fc-lb" placeholder="Contoh: 50,30,20" />
           </div>
 
           <div class="setting-item">
-            <label class="label-with-icon">
-                Custom DNS
-                <span class="tooltip" data-tip="DNS khusus untuk bypass internet positif">(?)</span>
-            </label>
+            <div class="label-row">
+                <label>Custom DNS</label>
+                <button class="info-btn" data-key="dns"><i data-lucide="help-circle" width="14"></i></button>
+            </div>
             <input id="fc-dns" value="8.8.8.8, 1.1.1.1" />
           </div>
         </div>
@@ -114,7 +128,7 @@
 
       <section class="card output-section">
         <div class="card-header">
-          <h2><i data-lucide="code"></i> Result Preview</h2>
+          <h2><i data-lucide="code" width="18"></i> Result</h2>
           <div class="tab-buttons">
             <button class="tab-btn active" data-target="js">JS</button>
             <button class="tab-btn" data-target="yaml">YAML</button>
@@ -122,21 +136,33 @@
         </div>
 
         <div class="code-container">
-          <pre id="fc-js" class="code-block active">// Klik Generate untuk melihat hasil...</pre>
+          <pre id="fc-js" class="code-block active">// Hasil script akan muncul di sini...</pre>
           <pre id="fc-yaml" class="code-block"></pre>
         </div>
 
         <div class="action-buttons">
-          <button id="fc-copy-js" class="btn btn-secondary"><i data-lucide="copy"></i> Copy JS</button>
-          <button id="fc-download-js" class="btn btn-outline"><i data-lucide="download"></i> Save JS</button>
-          <button id="fc-copy-yaml" class="btn btn-secondary hidden"><i data-lucide="copy"></i> Copy YAML</button>
+          <button id="fc-copy-js" class="btn btn-secondary"><i data-lucide="copy" width="16"></i> Copy</button>
+          <button id="fc-download-js" class="btn btn-outline"><i data-lucide="download" width="16"></i> Save</button>
+          <button id="fc-copy-yaml" class="btn btn-secondary hidden"><i data-lucide="copy" width="16"></i> Copy</button>
         </div>
       </section>
     </main>
     
-    <footer>
-      <p>Developer: <strong>Itsbad</strong> &bull; Client-side processing only.</p>
+    <footer class="app-footer">
+      <p>FlyClash Converter &bull; Developer: <strong>Itsbad</strong></p>
     </footer>
+  </div>
+
+  <div id="info-modal" class="modal-overlay hidden">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h3 id="modal-title">Title</h3>
+              <button id="close-modal"><i data-lucide="x" width="20"></i></button>
+          </div>
+          <div class="modal-body" id="modal-desc">
+              Description goes here.
+          </div>
+      </div>
   </div>
 
   <script src="script.js"></script>
