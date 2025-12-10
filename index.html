@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FlyClash Override - Network Edition</title>
     
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/%3E%3C/svg%3E">
+
     <script src="https://cdn.tailwindcss.com"></script>
 
     <script>
@@ -272,11 +274,6 @@
             const skipCert = document.getElementById('skip-cert').checked;
             const blockAds = document.getElementById('block-ads').checked;
 
-            // Interval in seconds for Clash Config (FlyClash usually uses seconds for interval, ms for timeout)
-            // But let's keep input as ms as requested, and convert if necessary. 
-            // Standard Clash `interval` is seconds (e.g., 300). User asked for 1000ms. 
-            // 1000ms = 1s. This is very fast. I will use the raw value if logic permits, or assume user knows what they do.
-            // Note: Clash `interval` is usually seconds. `timeout` is ms.
             const intervalSec = Math.floor(interval / 1000); 
 
             // Apply Node Settings
