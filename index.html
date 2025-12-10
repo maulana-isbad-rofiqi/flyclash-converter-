@@ -5,21 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FlyClash Converter Override</title>
     
-    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-
     <script>
         window.onerror = function(msg, url, line) {
-            const errDiv = document.getElementById('error-display');
-            if (errDiv) {
-                errDiv.style.display = 'block';
-                errDiv.innerHTML = '<strong>System Error:</strong> ' + msg + '<br><small>Line: ' + line + '</small>';
+            var errContainer = document.getElementById('fatal-error');
+            if (errContainer) {
+                errContainer.style.display = 'block';
+                document.getElementById('err-msg').innerText = msg;
             }
             return false;
         };
     </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 
     <script>
         tailwind.config = {
@@ -34,32 +34,39 @@
 
     <style>
         body { background-color: #09090b; color: #e4e4e7; font-family: sans-serif; }
-        .glass { background: rgba(24, 24, 27, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); }
+        .glass { background: rgba(24, 24, 27, 0.9); border: 1px solid rgba(255,255,255,0.08); }
         .input-dark { background: #09090b; border: 1px solid #3f3f46; color: #f4f4f5; width: 100%; border-radius: 6px; padding: 8px; font-size: 14px; }
         .input-dark:focus { border-color: #6366f1; outline: none; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #18181b; }
         ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
         pre { white-space: pre-wrap; word-wrap: break-word; }
-        /* Checkbox */
+        
+        /* Interactive Elements */
         .check-group { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 6px; background: rgba(255,255,255,0.03); cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
         .check-group:hover { border-color: #6366f1; background: rgba(99, 102, 241, 0.1); }
         .accent-checkbox { accent-color: #6366f1; width: 16px; height: 16px; }
-        /* Animasi */
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        .modal-anim { animation: fadeIn 0.2s ease-out forwards; }
+        
+        /* Animation */
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .anim-in { animation: slideUp 0.3s ease-out forwards; }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-8">
 
-    <div id="error-display" style="display:none; background:#ef4444; color:white; padding:15px; border-radius:8px; margin-bottom:20px;"></div>
+    <div id="fatal-error" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; color:red; padding:20px; z-index:9999;">
+        <h2 style="font-size:20px; font-weight:bold;">System Error</h2>
+        <p>Gagal memuat library. Pastikan koneksi internet lancar untuk memuat React pertama kali.</p>
+        <p id="err-msg" style="font-family:monospace; background:#222; padding:10px; margin-top:10px;"></p>
+        <button onclick="window.location.reload()" style="margin-top:20px; padding:10px 20px; background:#fff; color:#000; border:none; cursor:pointer;">Reload Page</button>
+    </div>
 
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- ICONS (Safe SVG) ---
+        // --- ICONS ---
         const Icon = ({ path, size=18 }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{path}</svg>
         );
@@ -75,24 +82,24 @@
             Help: <Icon size={14} path={<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>} />
         };
 
-        // --- DATA BANTUAN ---
+        // --- HELP CONTENT ---
         const HELP_TEXT = {
-            "mode_auto": { title: "Auto Ping (Url-Test)", desc: "Otomatis memilih akun dengan ping terkecil (tercepat)." },
-            "mode_manual": { title: "Manual Select", desc: "Anda memilih sendiri akun yang ingin dipakai secara manual." },
-            "mode_lb": { title: "Load Balance", desc: "Menggabungkan traffic beberapa akun. Cocok untuk download." },
-            "mode_fallback": { title: "Fallback", desc: "Sistem cadangan. Menggunakan akun utama, jika mati pindah ke akun kedua." },
-            "interval": { title: "Interval", desc: "Waktu (detik) untuk mengecek ping server secara berkala." },
-            "group_name": { title: "Nama Grup", desc: "Nama yang muncul di menu Proxy FlyClash." },
-            "mixed_port": { title: "Mixed Port", desc: "Port lokal (Default: 7890). Biarkan jika tidak paham." },
-            "allow_lan": { title: "Allow LAN", desc: "Izinkan perangkat lain di Wifi yang sama nebeng VPN ini." },
-            "dns": { title: "DNS Strategy", desc: "Fake-IP: Mengatasi masalah loading/bengong.\nCustom: Pakai DNS Google/Cloudflare." },
-            "skip_cert": { title: "Skip Cert", desc: "Wajib ON untuk akun gratisan agar koneksi tidak ditolak (SSL Error)." },
-            "block_ads": { title: "Block Ads", desc: "Memblokir iklan dasar (Google Ads, dll)." },
-            "priority": { title: "Top Priority", desc: "Menaruh grup proxy ini di urutan paling atas." },
-            "sosmed": { title: "Inject WA/TT", desc: "Memastikan WhatsApp & TikTok otomatis lewat proxy ini agar lancar." }
+            "mode_auto": { title: "Auto Ping", desc: "Otomatis menggunakan akun dengan ping tercepat." },
+            "mode_manual": { title: "Manual", desc: "Pilih sendiri akun secara manual." },
+            "mode_lb": { title: "Load Balance", desc: "Membagi beban traffic ke banyak akun sekaligus." },
+            "mode_fallback": { title: "Fallback", desc: "Jika akun utama mati, otomatis pindah ke akun cadangan." },
+            "interval": { title: "Interval", desc: "Waktu pengecekan ping (detik)." },
+            "group_name": { title: "Nama Grup", desc: "Label yang muncul di FlyClash." },
+            "mixed_port": { title: "Mixed Port", desc: "Port lokal proxy." },
+            "allow_lan": { title: "Allow LAN", desc: "Izinkan share koneksi VPN via Hotspot/Wifi." },
+            "dns": { title: "DNS Strategy", desc: "Fake-IP: Anti Bengong.\nCustom: Pakai DNS Google/Cloudflare." },
+            "skip_cert": { title: "Skip Cert", desc: "Lewati validasi SSL (Wajib untuk akun gratis)." },
+            "block_ads": { title: "Block Ads", desc: "Blokir iklan basic." },
+            "priority": { title: "Top Priority", desc: "Grup ditaruh paling atas." },
+            "sosmed": { title: "Inject WA/TT", desc: "Khusus WA/TikTok agar tidak pending." }
         };
 
-        // --- PARSER CONFIG ---
+        // --- PARSER ---
         const parseConfig = (line, index) => {
             try {
                 if (line.startsWith("vmess://")) {
@@ -122,7 +129,7 @@
             if (!content) return null;
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
-                    <div className="bg-[#18181b] border border-zinc-700 w-full max-w-sm rounded-xl p-6 shadow-2xl modal-anim" onClick={e => e.stopPropagation()}>
+                    <div className="bg-[#18181b] border border-zinc-700 w-full max-w-sm rounded-xl p-6 shadow-2xl anim-in" onClick={e => e.stopPropagation()}>
                         <h3 className="text-lg font-bold text-primary mb-2">{content.title}</h3>
                         <p className="text-sm text-zinc-300 whitespace-pre-line">{content.desc}</p>
                         <button onClick={onClose} className="mt-5 w-full py-2 bg-zinc-800 hover:bg-zinc-700 rounded text-xs font-bold text-zinc-300">TUTUP</button>
@@ -189,15 +196,15 @@
                     return `{ "name": "${groupName} (${niceName})", "type": "${mode}", "url": "http://www.gstatic.com/generate_204", "interval": ${interval}, ${mode === 'load-balance' ? '"strategy": "consistent-hashing",' : ''} "proxies": proxies.map(p => p.name) }`;
                 }).join(",\n    ");
 
-                const script = `// FlyClash Override Generated\n// Dev: Itsbad\n// Active Modes: ${activeModes.join(", ")}\n\nfunction main(config) {\n    const proxies = ${nodesJson};\n    config.proxies = (config.proxies || []).concat(proxies);\n    \n    const newGroups = [\n    ${groupsArrayString}\n    ];\n\n    if (!config['proxy-groups']) config['proxy-groups'] = [];\n    ${autoInsert ? "config['proxy-groups'].unshift(...newGroups);" : "config['proxy-groups'].push(...newGroups);"}\n\n    config['allow-lan'] = ${allowLan};\n    config['mixed-port'] = ${mixedPort};\n    config['ipv6'] = false;\n\n    ${dnsConfig}\n\n    const newRules = ${rulesString};\n    if(newRules.length > 0) config.rules = newRules.concat(config.rules || []);\n\n    config['proxy-groups'].forEach(g => {\n        if (g.type === 'select' && !newGroups.find(ng => ng.name === g.name)) {\n            newGroups.forEach(ng => g.proxies.push(ng.name));\n        }\n    });\n\n    return config;\n}`;
+                const script = `// FlyClash Converter Override\n// Dev: Itsbad\n// Active Modes: ${activeModes.join(", ")}\n\nfunction main(config) {\n    const proxies = ${nodesJson};\n    config.proxies = (config.proxies || []).concat(proxies);\n    \n    const newGroups = [\n    ${groupsArrayString}\n    ];\n\n    if (!config['proxy-groups']) config['proxy-groups'] = [];\n    ${autoInsert ? "config['proxy-groups'].unshift(...newGroups);" : "config['proxy-groups'].push(...newGroups);"}\n\n    config['allow-lan'] = ${allowLan};\n    config['mixed-port'] = ${mixedPort};\n    config['ipv6'] = false;\n\n    ${dnsConfig}\n\n    const newRules = ${rulesString};\n    if(newRules.length > 0) config.rules = newRules.concat(config.rules || []);\n\n    config['proxy-groups'].forEach(g => {\n        if (g.type === 'select' && !newGroups.find(ng => ng.name === g.name)) {\n            newGroups.forEach(ng => g.proxies.push(ng.name));\n        }\n    });\n\n    return config;\n}`;
                 setOutputJS(script);
             };
 
-            const copyToClipboard = () => { navigator.clipboard.writeText(outputJS); alert("Script berhasil disalin!"); };
+            const copyToClipboard = () => { navigator.clipboard.writeText(outputJS); alert("Disalin!"); };
             const downloadFile = () => { const blob = new Blob([outputJS], { type: "text/javascript" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = 'flyclash-override.js'; a.click(); };
 
             return (
-                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 pb-20 relative">
+                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 pb-20 relative anim-in">
                     <Modal content={modalContent} onClose={closeHelp} />
 
                     <div className="lg:col-span-12 mb-4 flex justify-between items-center">
@@ -218,7 +225,7 @@
                         </div>
 
                         <div>
-                            <label className="text-xs font-bold text-gray-400 mb-2 block">2. PILIH MODE</label>
+                            <label className="text-xs font-bold text-gray-400 mb-2 block">2. PILIH MODE (Multi Select)</label>
                             <div className="grid grid-cols-2 gap-3">
                                 {[
                                     {id: 'url-test', icon: Icons.Zap, label: 'Auto Ping', help: 'mode_auto'},
@@ -274,11 +281,11 @@
                                 <span className="text-xs font-mono text-primary flex items-center gap-2">{Icons.Zap} HASIL OUTPUT</span>
                                 <div className="flex gap-2">
                                     <button onClick={copyToClipboard} className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1 rounded flex items-center gap-1 border border-zinc-700">{Icons.Copy} Copy</button>
-                                    <button onClick={downloadFile} className="text-xs bg-primary hover:bg-indigo-600 text-white px-3 py-1 rounded flex items-center gap-1">{Icons.Download} Save .js</button>
+                                    <button onClick={downloadFile} className="text-xs bg-primary hover:bg-indigo-600 text-white px-3 py-1 rounded flex items-center gap-1">{Icons.Download} Save</button>
                                 </div>
                             </div>
                             <div className="flex-1 bg-black/50 p-4 overflow-auto font-mono text-xs leading-relaxed text-gray-300">
-                                <pre>{outputJS || "// Klik Generate Script untuk melihat hasil..."}</pre>
+                                <pre>{outputJS || "// 1. Masukkan Config\n// 2. Pilih Mode\n// 3. Klik Generate"}</pre>
                             </div>
                         </div>
                     </div>
