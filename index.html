@@ -1,360 +1,210 @@
 <!DOCTYPE html>
-<html lang="id" class="dark">
+<html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlyClash Converter Override (Native)</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: { bg: '#09090b', glass: '#18181b', primary: '#6366f1' }
-                }
-            }
-        }
-    </script>
-
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FlyClash Converter PRO - Itsbad</title>
     <style>
-        body { background-color: #09090b; color: #e4e4e7; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-        .glass { background: rgba(24, 24, 27, 0.9); border: 1px solid rgba(255,255,255,0.1); }
-        
-        /* Input Styles */
-        .input-dark { background: #09090b; border: 1px solid #3f3f46; color: #f4f4f5; width: 100%; border-radius: 6px; padding: 8px; font-size: 13px; outline: none; transition: 0.2s; }
-        .input-dark:focus { border-color: #6366f1; }
-        
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #18181b; }
-        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
-        
-        /* Checkbox Custom */
-        .check-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-radius: 8px; border: 1px solid transparent; background: rgba(255,255,255,0.03); cursor: pointer; transition: 0.2s; }
-        .check-item:hover { border-color: #6366f1; background: rgba(99, 102, 241, 0.1); }
-        .check-item input { accent-color: #6366f1; width: 16px; height: 16px; }
-        
-        /* Mode Button Active State */
-        .mode-btn { transition: 0.2s; border: 1px solid transparent; }
-        .mode-btn.active { background: rgba(99, 102, 241, 0.2); border-color: #6366f1; color: white; }
-        
-        /* Modal */
-        #help-modal { transition: opacity 0.2s; }
-        .hidden { display: none !important; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background: #222;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 22px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            font-size: 15px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        select, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px;
+            border: none;
+            width: 100%;
+            border-radius: 6px;
+            font-size: 17px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background: #0056d6;
+        }
+
+        .help {
+            cursor: pointer;
+            font-weight: bold;
+            color: #007bff;
+            margin-left: 5px;
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            max-width: 350px;
+        }
+        .popup button {
+            background: red;
+            margin-top: 10px;
+        }
     </style>
 </head>
-<body class="min-h-screen p-4 md:p-8">
+<body>
+<header>FlyClash Converter PRO - Itsbad</header>
 
-    <div class="max-w-7xl mx-auto mb-6 flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-white flex items-center gap-3">
-            <span class="text-primary">⚡</span> FlyClash Converter Override
-        </h1>
-        <div class="text-xs font-mono text-zinc-500 border border-zinc-800 px-3 py-1 rounded-full">Dev: Itsbad</div>
-    </div>
+<div class="container">
+    <div class="section-title">Masukkan Link V2Ray / VLESS</div>
+    <textarea id="inputConfig" placeholder="Masukkan config VLESS/Vmess..."></textarea>
 
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 pb-20">
-        
-        <div class="lg:col-span-5 space-y-6">
-            
-            <div class="glass p-5 rounded-xl border-l-4 border-l-primary">
-                <div class="flex justify-between mb-2">
-                    <label class="text-xs font-bold text-gray-400">1. INPUT CONFIG</label>
-                    <span id="node-count" class="text-xs text-primary font-mono">0 nodes</span>
-                </div>
-                <textarea id="input-config" class="w-full h-32 bg-black/30 border border-zinc-700 rounded-lg p-3 text-xs font-mono text-gray-300 focus:border-primary focus:outline-none resize-none" placeholder="Paste vmess:// vless:// trojan:// di sini..."></textarea>
-                <div class="flex justify-end mt-2">
-                    <button onclick="clearInput()" class="text-xs text-red-400 hover:text-red-300">Clear</button>
-                </div>
-            </div>
+    <div class="section-title">Mode Generator <span class="help" onclick="openPopup('modeInfo')">?</span></div>
+    <select id="mode">
+        <option value="manual">Manual</option>
+        <option value="bestping">Best Ping</option>
+        <option value="loadbalance">Load Balance</option>
+        <option value="fallback">Fallback</option>
+        <option value="blockads">Block Ads</option>
+    </select>
 
-            <div>
-                <label class="text-xs font-bold text-gray-400 mb-2 block">2. PILIH MODE (Bisa Banyak)</label>
-                <div class="grid grid-cols-2 gap-3">
-                    <div onclick="toggleMode('url-test')" id="btn-url-test" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center active">
-                        <div class="flex items-center gap-2"><span class="text-lg">⚡</span> <span class="text-sm font-bold">Auto Ping</span></div>
-                        <button onclick="showHelp(event, 'auto')" class="text-zinc-500 hover:text-white">?</button>
-                    </div>
-                    <div onclick="toggleMode('select')" id="btn-select" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center">
-                        <div class="flex items-center gap-2"><span class="text-lg">⚙️</span> <span class="text-sm font-bold">Manual</span></div>
-                        <button onclick="showHelp(event, 'manual')" class="text-zinc-500 hover:text-white">?</button>
-                    </div>
-                    <div onclick="toggleMode('load-balance')" id="btn-load-balance" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center">
-                        <div class="flex items-center gap-2"><span class="text-lg">🔄</span> <span class="text-sm font-bold">Load Bal</span></div>
-                        <button onclick="showHelp(event, 'lb')" class="text-zinc-500 hover:text-white">?</button>
-                    </div>
-                    <div onclick="toggleMode('fallback')" id="btn-fallback" class="mode-btn glass p-3 rounded-xl cursor-pointer flex justify-between items-center">
-                        <div class="flex items-center gap-2"><span class="text-lg">🛡️</span> <span class="text-sm font-bold">Fallback</span></div>
-                        <button onclick="showHelp(event, 'fallback')" class="text-zinc-500 hover:text-white">?</button>
-                    </div>
-                </div>
-            </div>
+    <div class="section-title">DNS <span class="help" onclick="openPopup('dnsInfo')">?</span></div>
+    <select id="dnsMode">
+        <option value="default">Default</option>
+        <option value="fakeip">Fake-IP</option>
+        <option value="custom">Custom</option>
+    </select>
 
-            <div class="glass p-5 rounded-xl space-y-4">
-                <h3 class="text-sm font-bold text-gray-200 border-b border-zinc-700 pb-2">3. PENGATURAN</h3>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] text-gray-500 mb-1 block">INTERVAL (s)</label>
-                        <input type="number" id="interval" value="300" class="input-dark">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-gray-500 mb-1 block">NAMA GRUP</label>
-                        <input type="text" id="group-name" value="FLYCLASH" class="input-dark">
-                    </div>
-                </div>
+    <input type="text" id="dnsCustom" placeholder="DNS Custom (jika dipilih custom)" />
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] text-gray-500 mb-1 block">MIXED PORT</label>
-                        <input type="number" id="mixed-port" value="7890" class="input-dark">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-gray-500 mb-1 block">DNS MODE</label>
-                        <select id="dns-mode" onchange="toggleCustomDns()" class="input-dark">
-                            <option value="default">Default</option>
-                            <option value="fake-ip">⚡ Fake-IP (Anti Bengong)</option>
-                            <option value="custom">Custom IP</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <input type="text" id="custom-dns" value="8.8.8.8, 1.1.1.1" class="input-dark hidden" placeholder="8.8.8.8, 1.1.1.1">
+    <button onclick="generateConfig()">Generate FlyClash</button>
 
-                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-800">
-                    <label class="check-item">
-                        <div class="flex gap-2"><input type="checkbox" id="skip-cert" checked><span class="text-xs text-gray-300">Skip Cert</span></div>
-                    </label>
-                    <label class="check-item">
-                        <div class="flex gap-2"><input type="checkbox" id="block-ads"><span class="text-xs text-gray-300">Block Ads</span></div>
-                    </label>
-                    <label class="check-item">
-                        <div class="flex gap-2"><input type="checkbox" id="top-prio" checked><span class="text-xs text-gray-300">Top Priority</span></div>
-                    </label>
-                    <label class="check-item">
-                        <div class="flex gap-2"><input type="checkbox" id="inject-sosmed"><span class="text-xs text-gray-300">Inject WA/TT</span></div>
-                    </label>
-                    <label class="check-item col-span-2">
-                        <div class="flex gap-2"><input type="checkbox" id="allow-lan" checked><span class="text-xs text-gray-300">Allow LAN (Share Wifi)</span></div>
-                    </label>
-                </div>
+    <div class="section-title">Output Config FlyClash</div>
+    <textarea id="outputConfig" readonly></textarea>
+</div>
 
-                <button onclick="generateScript()" class="w-full py-3 bg-primary hover:bg-indigo-500 text-white font-bold rounded-lg mt-4 shadow-lg shadow-indigo-500/20 transition">GENERATE SCRIPT</button>
-            </div>
-        </div>
+<!-- POPUP INFO -->
+<div id="modeInfo" class="popup">
+    <b>Penjelasan Mode:</b><br><br>
+    <b>Manual:</b> Hanya memilih 1 server saja.<br>
+    <b>Best Ping:</b> FlyClash otomatis memilih ping server terbaik.<br>
+    <b>Load Balance:</b> Semua server dipakai bergantian.<br>
+    <b>Fallback:</b> Server utama mati → otomatis pindah ke cadangan.<br>
+    <b>Block Ads:</b> Memblokir iklan & tracking DNS.<br>
+    <button onclick="closePopup('modeInfo')">Tutup</button>
+</div>
 
-        <div class="lg:col-span-7">
-            <div class="glass flex flex-col rounded-xl overflow-hidden h-[600px] border border-zinc-800">
-                <div class="bg-zinc-900/80 p-3 border-b border-zinc-800 flex justify-between items-center">
-                    <span class="text-xs font-mono text-primary flex items-center gap-2">📄 HASIL OUTPUT</span>
-                    <div class="flex gap-2">
-                        <button onclick="copyText()" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1 rounded border border-zinc-700">Copy</button>
-                        <button onclick="downloadFile()" class="text-xs bg-primary hover:bg-indigo-600 text-white px-3 py-1 rounded">Save .js</button>
-                    </div>
-                </div>
-                <textarea id="output-area" readonly class="flex-1 bg-black/50 p-4 font-mono text-xs leading-relaxed text-gray-300 resize-none focus:outline-none">
-// 1. Masukkan akun Vmess/Vless/Trojan
-// 2. Pilih Mode (Auto Ping / Manual / dll)
-// 3. Klik Generate Script
-                </textarea>
-            </div>
-        </div>
-    </div>
+<div id="dnsInfo" class="popup">
+    <b>DNS Mode:</b><br><br>
+    <b>Default:</b> DNS bawaan FlyClash.<br>
+    <b>Fake-IP:</b> Untuk kompatibilitas game atau app tertentu.<br>
+    <b>Custom:</b> Masukkan DNS sendiri (contoh: 1.1.1.1, 8.8.8.8).<br>
+    <button onclick="closePopup('dnsInfo')">Tutup</button>
+</div>
 
-    <div id="help-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm" onclick="closeHelp()">
-        <div class="bg-[#18181b] border border-zinc-700 w-full max-w-sm rounded-xl p-6" onclick="event.stopPropagation()">
-            <h3 id="modal-title" class="text-lg font-bold text-primary mb-2">Title</h3>
-            <p id="modal-desc" class="text-sm text-zinc-300 mb-4 whitespace-pre-line">Desc</p>
-            <button onclick="closeHelp()" class="w-full py-2 bg-zinc-800 rounded text-xs font-bold text-zinc-300">TUTUP</button>
-        </div>
-    </div>
+<script>
+function openPopup(id){ document.getElementById(id).style.display='block'; }
+function closePopup(id){ document.getElementById(id).style.display='none'; }
 
-    <script>
-        // State
-        const activeModes = new Set(['url-test']);
-        
-        // Data Help
-        const helpData = {
-            'auto': {t: "Auto Ping", d: "Otomatis pilih akun dengan ping tercepat."},
-            'manual': {t: "Manual Select", d: "Pilih akun sendiri secara manual."},
-            'lb': {t: "Load Balance", d: "Gabung traffic beberapa akun."},
-            'fallback': {t: "Fallback", d: "Akun cadangan otomatis jika akun utama mati."}
+function parseVLESS(url){
+    try{
+        const u = new URL(url.replace(/vless:\/\//, 'https://'));
+        return {
+            uuid: u.username,
+            host: u.hostname,
+            port: u.port,
+            sni: u.searchParams.get('sni'),
+            path: u.searchParams.get('path'),
+            wsHost: u.searchParams.get('host')
         };
+    }catch(e){ return null; }
+}
 
-        // UI Functions
-        function toggleMode(mode) {
-            const btn = document.getElementById('btn-' + mode);
-            
-            if (activeModes.has(mode)) {
-                if (activeModes.size > 1) {
-                    activeModes.delete(mode);
-                    btn.classList.remove('active');
-                }
-            } else {
-                activeModes.add(mode);
-                btn.classList.add('active');
-            }
-        }
+function generateConfig(){
+    const text = document.getElementById("inputConfig").value.trim().split(/\n+/);
+    const mode = document.getElementById("mode").value;
+    const dnsMode = document.getElementById("dnsMode").value;
+    const dnsCustom = document.getElementById("dnsCustom").value.trim();
 
-        function toggleCustomDns() {
-            const val = document.getElementById('dns-mode').value;
-            const input = document.getElementById('custom-dns');
-            if (val === 'custom') input.classList.remove('hidden');
-            else input.classList.add('hidden');
-        }
-
-        function clearInput() {
-            document.getElementById('input-config').value = '';
-            document.getElementById('node-count').innerText = '0 nodes';
-        }
-
-        function showHelp(e, key) {
-            e.stopPropagation();
-            const data = helpData[key];
-            if(data) {
-                document.getElementById('modal-title').innerText = data.t;
-                document.getElementById('modal-desc').innerText = data.d;
-                document.getElementById('help-modal').classList.remove('hidden');
-            }
-        }
-
-        function closeHelp() {
-            document.getElementById('help-modal').classList.add('hidden');
-        }
-
-        // --- CORE LOGIC ---
-
-        function parseConfig(line, index) {
-            try {
-                if (line.startsWith("vmess://")) {
-                    const b64 = line.replace("vmess://", "");
-                    const conf = JSON.parse(atob(b64));
-                    return {
-                        name: conf.ps || `VMess-${index}`, type: "vmess", server: conf.add, port: parseInt(conf.port), uuid: conf.id, alterId: parseInt(conf.aid || 0), cipher: "auto", tls: conf.tls === "tls", servername: conf.host || conf.sni || "", network: conf.net || "ws", "ws-opts": conf.net === "ws" ? { path: conf.path || "/", headers: { Host: conf.host || "" } } : undefined, "grpc-opts": conf.net === "grpc" ? { "grpc-service-name": conf.path || "grpc" } : undefined
-                    };
-                } else if (line.startsWith("vless://") || line.startsWith("trojan://")) {
-                    const url = new URL(line);
-                    const isVless = line.startsWith("vless://");
-                    const params = url.searchParams;
-                    const result = {
-                        name: decodeURIComponent(url.hash.slice(1)) || `${isVless ? 'VLESS' : 'Trojan'}-${index}`, type: isVless ? "vless" : "trojan", server: url.hostname, port: parseInt(url.port), uuid: url.username, password: isVless ? undefined : url.username, tls: params.get("security") === "tls" || params.get("security") === "reality", servername: params.get("sni") || "", network: params.get("type") || "tcp", "client-fingerprint": params.get("fp") || "chrome",
-                    };
-                    if (params.get("type") === "ws") result["ws-opts"] = { path: params.get("path") || "/", headers: { Host: params.get("host") || params.get("sni") || "" } };
-                    if (params.get("type") === "grpc") result["grpc-opts"] = { "grpc-service-name": params.get("serviceName") || "grpc" };
-                    if (params.get("security") === "reality") result["reality-opts"] = { "public-key": params.get("pbk") || "", "short-id": params.get("sid") || "" };
-                    return result;
-                }
-                return null;
-            } catch (e) { return null; }
-        }
-
-        function generateScript() {
-            const inputVal = document.getElementById('input-config').value;
-            const lines = inputVal.split('\n').filter(l => l.trim().length > 5);
-            
-            const nodes = lines.map((l, i) => parseConfig(l.trim(), i)).filter(n => n !== null);
-            document.getElementById('node-count').innerText = nodes.length + ' nodes';
-
-            if (nodes.length === 0) {
-                document.getElementById('output-area').value = "// Error: Config tidak valid atau kosong.";
-                return;
-            }
-
-            // Get Settings
-            const interval = document.getElementById('interval').value;
-            const groupName = document.getElementById('group-name').value;
-            const mixedPort = document.getElementById('mixed-port').value;
-            const allowLan = document.getElementById('allow-lan').checked;
-            const skipCert = document.getElementById('skip-cert').checked;
-            const blockAds = document.getElementById('block-ads').checked;
-            const topPrio = document.getElementById('top-prio').checked;
-            const injectSosmed = document.getElementById('inject-sosmed').checked;
-            const dnsMode = document.getElementById('dns-mode').value;
-            const customDns = document.getElementById('custom-dns').value;
-
-            // Apply Node Settings
-            nodes.forEach(n => {
-                if (skipCert) n['skip-cert-verify'] = true;
-                n.udp = true;
-            });
-
-            // Build DNS
-            let dnsConfig = "// DNS: Default";
-            if(dnsMode === 'fake-ip') {
-                dnsConfig = `config.dns = { "enable": true, "ipv6": false, "listen": "0.0.0.0:1053", "enhanced-mode": "fake-ip", "fake-ip-range": "198.18.0.1/16", "fake-ip-filter": ["*.lan", "*.local", "time.*.com", "wpad.+"], "default-nameserver": ["8.8.8.8", "1.1.1.1"], "nameserver": ["https://dns.google/dns-query", "https://1.1.1.1/dns-query"], "fallback": ["https://doh.pub/dns-query", "8.8.8.8"], "fallback-filter": { "geoip": true, "ipcidr": ["240.0.0.0/4"] } };`;
-            } else if (dnsMode === 'custom') {
-                dnsConfig = `if(!config.dns) config.dns = {}; config.dns.nameserver = ${JSON.stringify(customDns.split(',').map(s=>s.trim()))};`;
-            }
-
-            // Build Rules
-            let extraRules = [];
-            if(blockAds) extraRules.push("DOMAIN-KEYWORD,ads,REJECT", "DOMAIN-SUFFIX,doubleclick.net,REJECT");
-            if(injectSosmed) extraRules.push(`DOMAIN-SUFFIX,whatsapp.com,${groupName} (AUTO)`, `DOMAIN-KEYWORD,whatsapp,${groupName} (AUTO)`, `DOMAIN-SUFFIX,tiktokv.com,${groupName} (AUTO)`);
-            const rulesStr = JSON.stringify(extraRules);
-
-            // Build Groups
-            const activeModesArr = Array.from(activeModes);
-            const groupsStr = activeModesArr.map(mode => {
-                let niceName = mode === 'url-test' ? "AUTO" : mode === 'select' ? "MANUAL" : mode === 'load-balance' ? "LB" : "FALLBACK";
-                return `{ "name": "${groupName} (${niceName})", "type": "${mode}", "url": "http://www.gstatic.com/generate_204", "interval": ${interval}, ${mode === 'load-balance' ? '"strategy": "consistent-hashing",' : ''} "proxies": proxies.map(p => p.name) }`;
-            }).join(",\n    ");
-
-            // Final Template
-            const finalScript = `// FlyClash Converter Override
-// Dev: Itsbad
-// Modes: ${activeModesArr.join(', ')}
-// Generated: ${new Date().toLocaleString()}
-
-function main(config) {
-    const proxies = ${JSON.stringify(nodes, null, 2)};
-    config.proxies = (config.proxies || []).concat(proxies);
-    
-    const newGroups = [
-    ${groupsStr}
-    ];
-
-    if (!config['proxy-groups']) config['proxy-groups'] = [];
-    ${topPrio ? "config['proxy-groups'].unshift(...newGroups);" : "config['proxy-groups'].push(...newGroups);"}
-
-    config['allow-lan'] = ${allowLan};
-    config['mixed-port'] = ${mixedPort};
-    config['ipv6'] = false;
-
-    ${dnsConfig}
-
-    const newRules = ${rulesStr};
-    if(newRules.length > 0) config.rules = newRules.concat(config.rules || []);
-
-    // Add to existing groups
-    config['proxy-groups'].forEach(g => {
-        if (g.type === 'select' && !newGroups.find(ng => ng.name === g.name)) {
-            newGroups.forEach(ng => g.proxies.push(ng.name));
+    let proxies = [];
+    text.forEach(line=>{
+        if(line.startsWith("vless://")){
+            const p = parseVLESS(line);
+            if(p) proxies.push(p);
         }
     });
 
-    return config;
-}`;
+    let dnsSection = "    dns:\n      enable: true\n";
+    if(dnsMode === "fakeip") dnsSection += "      fake-ip: true\n";
+    if(dnsMode === "custom") dnsSection += `      nameserver: [${dnsCustom}]\n`;
 
-            document.getElementById('output-area').value = finalScript;
-        }
+    let proxyList = proxies.map((p,i)=>`  - name: NODE-${i+1}\n    type: vless\n    server: ${p.host}\n    port: ${p.port}\n    uuid: ${p.uuid}\n    tls: true\n    sni: ${p.sni}\n    network: ws\n    ws-opts:\n      path: ${p.path}\n      headers:\n        Host: ${p.wsHost}`).join("\n\n");
 
-        function copyText() {
-            const txt = document.getElementById('output-area');
-            txt.select();
-            document.execCommand('copy');
-            alert("Berhasil disalin!");
-        }
+    let group = "";
+    if(mode === "manual") group = "    type: select\n    proxies: [" + proxies.map((p,i)=>`NODE-${i+1}`).join(", ") + "]";
+    if(mode === "bestping") group = "    type: url-test\n    url: http://cp.cloudflare.com\n    interval: 3\n    proxies: [" + proxies.map((p,i)=>`NODE-${i+1}`).join(", ") + "]";
+    if(mode === "loadbalance") group = "    type: load-balance\n    proxies: [" + proxies.map((p,i)=>`NODE-${i+1}`).join(", ") + "]";
+    if(mode === "fallback") group = "    type: fallback\n    proxies: [" + proxies.map((p,i)=>`NODE-${i+1}`).join(", ") + "]";
+    if(mode === "blockads") group = "    type: select\n    proxies: [REJECT, " + proxies.map((p,i)=>`NODE-${i+1}`).join(", ") + "]";
 
-        function downloadFile() {
-            const txt = document.getElementById('output-area').value;
-            const blob = new Blob([txt], { type: "text/javascript" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = 'flyclash-override.js';
-            a.click();
-        }
-    </script>
+    const finalConfig =
+`port: 7890
+socks-port: 7891
+allow-lan: true
+mode: rule
+log-level: info
+
+${dnsSection}
+proxies:
+${proxyList}
+
+proxy-groups:
+  - name: "AUTO"
+${group}
+
+rules:
+  - GEOIP,CN,DIRECT
+  - MATCH,AUTO
+`;
+
+    document.getElementById("outputConfig").value = finalConfig;
+}
+</script>
 </body>
 </html>
