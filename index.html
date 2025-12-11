@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlyClash Override - Documentation Edition</title>
+    <title>FlyClash Override - DNS Select Edition</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/%3E%3C/svg%3E">
 
@@ -68,15 +68,16 @@
         /* Section Divider */
         .divider { border-bottom: 1px solid #27272a; padding-bottom: 5px; margin-bottom: 10px; margin-top: 15px; color: #a1a1aa; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 5px; }
         
-        /* Modal */
+        /* Modal & Utils */
         #help-modal { transition: opacity 0.2s; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body class="min-h-screen p-2 md:p-6">
 
     <div class="max-w-7xl mx-auto mb-4 flex justify-between items-center px-2">
         <h1 class="text-xl font-bold text-white flex items-center gap-2">
-            <span class="text-primary text-2xl">⚡</span> FlyClash <span class="text-zinc-500 font-normal">Docs Edition</span>
+            <span class="text-primary text-2xl">⚡</span> FlyClash <span class="text-zinc-500 font-normal">Selector Edition</span>
         </h1>
         <div class="text-[10px] font-mono text-zinc-600 border border-zinc-900 px-2 py-1 rounded bg-black/20">Dev: Itsbad</div>
     </div>
@@ -131,14 +132,43 @@
                     <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="allow-lan" checked><span>Allow LAN</span></div><span class="help-icon" onclick="showHelp(event, 'allow_lan')">!</span></label>
                 </div>
 
+                <div class="divider">DNS CONFIGURATION</div>
+                <div class="mb-3">
+                    <div class="lbl-container"><span class="lbl">DNS MODE SELECTOR</span><span class="help-icon" onclick="showHelp(event, 'dns_selector')">!</span></div>
+                    <select id="dns-mode" onchange="toggleDnsFields()" class="input-dark cursor-pointer">
+                        <option value="default">Default (System/ISP) - No Override</option>
+                        <option value="fake-ip" selected>⚡ Fake-IP (Anti-Bengong)</option>
+                        <option value="custom">Custom IP (Redir-Host)</option>
+                    </select>
+                </div>
+
+                <div id="dns-fields">
+                    <div class="grid grid-cols-3 gap-3 mb-2">
+                        <div>
+                            <div class="lbl-container"><span class="lbl">DNS PORT</span><span class="help-icon" onclick="showHelp(event, 'dns_port')">!</span></div>
+                            <input type="number" id="dns-port" value="7200" class="input-dark">
+                        </div>
+                        <div class="col-span-2">
+                            <div class="lbl-container"><span class="lbl">DNS PRIMARY</span><span class="help-icon" onclick="showHelp(event, 'dns_pri')">!</span></div>
+                            <input type="text" id="dns-primary" value="1.1.1.1" class="input-dark">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 mb-2">
+                        <div></div> <div class="col-span-2">
+                            <div class="lbl-container"><span class="lbl">DNS SECONDARY</span><span class="help-icon" onclick="showHelp(event, 'dns_sec')">!</span></div>
+                            <input type="text" id="dns-secondary" value="1.0.0.1" class="input-dark">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="divider">PORTS & TUN</div>
                 <div class="grid grid-cols-4 gap-3 mb-2">
                     <div>
-                        <div class="lbl-container"><span class="lbl">HTTP PORT</span><span class="help-icon" onclick="showHelp(event, 'http_port')">!</span></div>
+                        <div class="lbl-container"><span class="lbl">HTTP</span><span class="help-icon" onclick="showHelp(event, 'http_port')">!</span></div>
                         <input type="number" id="http-port" value="8800" class="input-dark">
                     </div>
                     <div>
-                        <div class="lbl-container"><span class="lbl">SOCKS5</span><span class="help-icon" onclick="showHelp(event, 'socks_port')">!</span></div>
+                        <div class="lbl-container"><span class="lbl">SOCKS</span><span class="help-icon" onclick="showHelp(event, 'socks_port')">!</span></div>
                         <input type="number" id="socks-port" value="3080" class="input-dark">
                     </div>
                     <div>
@@ -148,27 +178,6 @@
                     <div>
                         <div class="lbl-container"><span class="lbl">MTU</span><span class="help-icon" onclick="showHelp(event, 'mtu')">!</span></div>
                         <input type="number" id="mtu" value="1500" class="input-dark">
-                    </div>
-                </div>
-
-                <div class="divider">DNS CONFIGURATION</div>
-                <div class="grid grid-cols-3 gap-3 mb-2">
-                    <div>
-                        <div class="lbl-container"><span class="lbl">DNS PORT</span><span class="help-icon" onclick="showHelp(event, 'dns_port')">!</span></div>
-                        <input type="number" id="dns-port" value="7200" class="input-dark">
-                    </div>
-                    <div class="col-span-2">
-                        <div class="lbl-container"><span class="lbl">DNS PRIMARY</span><span class="help-icon" onclick="showHelp(event, 'dns_pri')">!</span></div>
-                        <input type="text" id="dns-primary" value="1.1.1.1" class="input-dark">
-                    </div>
-                </div>
-                <div class="grid grid-cols-3 gap-3 mb-2">
-                    <div class="col-span-1 pt-4">
-                         <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="fake-ip" checked><span>Fake-IP</span></div><span class="help-icon" onclick="showHelp(event, 'fake_ip')">!</span></label>
-                    </div>
-                    <div class="col-span-2">
-                        <div class="lbl-container"><span class="lbl">DNS SECONDARY</span><span class="help-icon" onclick="showHelp(event, 'dns_sec')">!</span></div>
-                        <input type="text" id="dns-secondary" value="1.0.0.1" class="input-dark">
                     </div>
                 </div>
 
@@ -183,7 +192,7 @@
                         <input type="number" id="timeout" value="3000" class="input-dark">
                     </div>
                     <div>
-                        <div class="lbl-container"><span class="lbl">RECONNECT</span><span class="help-icon" onclick="showHelp(event, 'reconnect')">!</span></div>
+                        <div class="lbl-container"><span class="lbl">RETRY</span><span class="help-icon" onclick="showHelp(event, 'reconnect')">!</span></div>
                         <input type="text" id="reconnect-count" value="3x" class="input-dark text-center">
                     </div>
                 </div>
@@ -261,12 +270,12 @@
             'udpgw': {t: "UDPGW Port", d: "UDP Gateway. Sangat penting untuk Game Online dan Call WA. Default: 7300."},
             'mtu': {t: "MTU", d: "Maximum Transmission Unit. Ukuran paket data. Standar 1500. Jika sering RTO, coba turunkan ke 1400 atau 1280."},
             
+            'dns_selector': {t: "DNS Mode", d: "Pilih strategi DNS:\n- Default: Ikut settingan App (Aman).\n- Fake-IP: Anti Bengong (Recommended).\n- Custom: Pakai IP DNS pilihan sendiri."},
             'dns_port': {t: "DNS Port", d: "Port internal untuk DNS Server Clash."},
             'dns_pri': {t: "DNS Primary", d: "DNS Utama. Disarankan 1.1.1.1 (Cloudflare) atau 8.8.8.8 (Google)."},
             'dns_sec': {t: "DNS Secondary", d: "DNS Cadangan jika DNS utama gagal."},
-            'fake_ip': {t: "Fake-IP Mode", d: "Mengembalikan IP palsu ke aplikasi agar resolving DNS dilakukan di remote server. Ampuh mengatasi 'Connected No Internet'."},
             
-            'interval': {t: "Ping Interval", d: "Seberapa sering (ms) Clash mengecek ping server. 1000ms = 1 detik. Semakin kecil semakin responsif, tapi boros baterai."},
+            'interval': {t: "Ping Interval", d: "Seberapa sering (ms) Clash mengecek ping server. 1000ms = 1 detik."},
             'timeout': {t: "Timeout", d: "Batas waktu tunggu (ms) sebelum koneksi dianggap gagal (RTO)."},
             'reconnect': {t: "Auto Reconnect", d: "Jumlah percobaan koneksi ulang otomatis sebelum menyerah."},
             
@@ -280,6 +289,16 @@
             if (activeModes.has(mode)) {
                 if (activeModes.size > 1) { activeModes.delete(mode); btn.classList.remove('active'); }
             } else { activeModes.add(mode); btn.classList.add('active'); }
+        }
+
+        function toggleDnsFields() {
+            const mode = document.getElementById('dns-mode').value;
+            const fields = document.getElementById('dns-fields');
+            if(mode === 'default') {
+                fields.classList.add('hidden');
+            } else {
+                fields.classList.remove('hidden');
+            }
         }
 
         function clearInput() {
@@ -360,10 +379,10 @@
             const udpgw = document.getElementById('udpgw').value;
             const mtu = document.getElementById('mtu').value;
             
+            const dnsMode = document.getElementById('dns-mode').value;
             const dnsPort = document.getElementById('dns-port').value;
             const dnsPri = document.getElementById('dns-primary').value;
             const dnsSec = document.getElementById('dns-secondary').value;
-            const fakeIp = document.getElementById('fake-ip').checked;
             
             const interval = document.getElementById('interval').value;
             const timeout = document.getElementById('timeout').value;
@@ -399,16 +418,20 @@
     }`;
             }).join(",\n    ");
 
-            let dnsJS = `config.dns = {
+            // DNS LOGIC FOR JS
+            let dnsJS = "// DNS: Default (No Override)";
+            if (dnsMode !== 'default') {
+                dnsJS = `config.dns = {
         "enable": true,
         "ipv6": false,
         "listen": "0.0.0.0:${dnsPort}",
-        "enhanced-mode": "${fakeIp ? 'fake-ip' : 'redir-host'}",
+        "enhanced-mode": "${dnsMode === 'fake-ip' ? 'fake-ip' : 'redir-host'}",
         "fake-ip-range": "198.18.0.1/16",
         "default-nameserver": ["${dnsPri}", "${dnsSec}"],
         "nameserver": ["${dnsPri}", "${dnsSec}", "https://dns.google/dns-query"],
         "fallback": ["https://doh.pub/dns-query", "${dnsPri}"],
     };`;
+            }
 
             const jsOutput = `/**
  * FlyClash Override Generated
@@ -443,7 +466,6 @@ function main(config) {
         "mtu": ${mtu}
     };
 
-    // DNS
     ${dnsJS}
 
     // GROUPS
@@ -492,12 +514,16 @@ tun:
   dns-hijack:
     - any:53
   mtu: ${mtu}
+`;
 
+            // DNS LOGIC FOR YAML
+            if (dnsMode !== 'default') {
+                yaml += `
 dns:
   enable: true
   ipv6: false
   listen: 0.0.0.0:${dnsPort}
-  enhanced-mode: ${fakeIp ? 'fake-ip' : 'redir-host'}
+  enhanced-mode: ${dnsMode === 'fake-ip' ? 'fake-ip' : 'redir-host'}
   fake-ip-range: 198.18.0.1/16
   default-nameserver:
     - ${dnsPri}
@@ -506,9 +532,12 @@ dns:
     - ${dnsPri}
     - ${dnsSec}
     - https://dns.google/dns-query
-
-proxies:
 `;
+            } else {
+                yaml += `\n# DNS: Default System\n`;
+            }
+
+            yaml += `\nproxies:\n`;
             nodes.forEach(n => {
                 yaml += `  - name: ${n.name}\n    type: ${n.type}\n    server: ${n.server}\n    port: ${n.port}\n    uuid: ${n.uuid}\n    cipher: ${n.cipher || 'auto'}\n    udp: true\n    tls: ${n.tls}\n    skip-cert-verify: ${n['skip-cert-verify']}\n    network: ${n.network}\n    servername: ${n.servername}\n`;
                 if(n['ws-opts']) {
