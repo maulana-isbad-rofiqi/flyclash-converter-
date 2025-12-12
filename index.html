@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Itsbad Config Generator + Sub</title>
+    <title>Itsbad Config Generator (Fixed)</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/%3E%3C/svg%3E">
 
@@ -23,52 +23,25 @@
     <style>
         body { background-color: #09090b; color: #e4e4e7; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
         .glass { background: rgba(24, 24, 27, 0.95); border: 1px solid rgba(255,255,255,0.08); }
-        
-        /* Input Styles */
         .input-dark { background: #0f0f11; border: 1px solid #27272a; color: #f4f4f5; width: 100%; border-radius: 4px; padding: 6px 10px; font-size: 12px; outline: none; transition: 0.2s; }
         .input-dark:focus { border-color: #6366f1; background: #151518; }
-        
-        /* Label Styles */
         .lbl-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .lbl { font-size: 10px; color: #71717a; font-weight: bold; text-transform: uppercase; }
-        
-        /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #18181b; }
         ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
-        
-        /* Checkbox Custom */
         .check-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: 6px; border: 1px solid transparent; background: rgba(255,255,255,0.03); cursor: pointer; transition: 0.2s; }
         .check-item:hover { border-color: #6366f1; background: rgba(99, 102, 241, 0.1); }
         .check-item input { accent-color: #6366f1; width: 14px; height: 14px; cursor: pointer; }
-        
-        /* Help Button (!) */
-        .help-icon { 
-            width: 14px; height: 14px; 
-            border-radius: 50%; 
-            background: #27272a; 
-            color: #a1a1aa; 
-            font-size: 9px; 
-            font-weight: bold; 
-            display: flex; align-items: center; justify-content: center; 
-            cursor: pointer; transition: 0.2s; 
-        }
+        .help-icon { width: 14px; height: 14px; border-radius: 50%; background: #27272a; color: #a1a1aa; font-size: 9px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
         .help-icon:hover { background: #6366f1; color: white; }
-
-        /* Mode Button */
         .mode-btn { transition: 0.2s; border: 1px solid transparent; position: relative; }
         .mode-btn.active { background: rgba(99, 102, 241, 0.15); border-color: #6366f1; color: white; }
         .mode-help { position: absolute; top: 4px; right: 4px; }
-        
-        /* Tabs */
-        .tab-btn { padding: 10px 5px; font-size: 10px; font-weight: bold; color: #52525b; border-bottom: 2px solid transparent; transition: 0.2s; width: 33.33%; text-align: center; }
+        .tab-btn { padding: 8px 15px; font-size: 11px; font-weight: bold; color: #52525b; border-bottom: 2px solid transparent; transition: 0.2s; }
         .tab-btn:hover { color: #d4d4d8; }
-        .tab-btn.active { color: #6366f1; border-color: #6366f1; background: rgba(99, 102, 241, 0.05); }
-        
-        /* Section Divider */
+        .tab-btn.active { color: #6366f1; border-color: #6366f1; }
         .divider { border-bottom: 1px solid #27272a; padding-bottom: 5px; margin-bottom: 10px; margin-top: 15px; color: #a1a1aa; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 5px; }
-        
-        /* Modal & Utils */
         #help-modal { transition: opacity 0.2s; }
         .hidden { display: none !important; }
     </style>
@@ -154,7 +127,8 @@
                         </div>
                     </div>
                     <div class="grid grid-cols-3 gap-3 mb-2">
-                        <div></div> <div class="col-span-2">
+                        <div></div> 
+                        <div class="col-span-2">
                             <div class="lbl-container"><span class="lbl">DNS SECONDARY</span><span class="help-icon" onclick="showHelp(event, 'dns_sec')">!</span></div>
                             <input type="text" id="dns-secondary" value="1.0.0.1" class="input-dark">
                         </div>
@@ -271,111 +245,64 @@
     </div>
 
     <script>
-        // State
         const activeModes = new Set(['url-test']);
-        
-        // --- DATA PENJELASAN (DOKUMENTASI) ---
         const helpData = {
-            'mode_auto': {t: "Auto Ping (Url-Test)", d: "Mode ini akan mengetes ping semua akun secara berkala, lalu otomatis menggunakan akun dengan ping terendah (tercepat)."},
-            'mode_manual': {t: "Manual Select", d: "Membuat grup di mana Anda harus memilih sendiri server yang ingin digunakan di menu Proxy FlyClash."},
-            'mode_lb': {t: "Load Balance", d: "Menggabungkan bandwidth beberapa akun. Traffic dibagi rata ke semua server. Bisa meningkatkan speed download."},
-            'mode_fallback': {t: "Fallback", d: "Sistem cadangan. Selalu menggunakan Server 1. Jika Server 1 mati, otomatis pindah ke Server 2."},
-            
-            'always_reconnect': {t: "Always Reconnect", d: "Memerintahkan aplikasi untuk otomatis menghubungkan ulang VPN jika koneksi terputus tiba-tiba."},
-            'wakelock': {t: "WakeLock", d: "Mencegah CPU HP masuk mode tidur (sleep) saat layar mati, agar koneksi VPN tidak putus di background."},
-            'allow_lan': {t: "Allow LAN", d: "Mengizinkan perangkat lain (HP/Laptop) yang terhubung ke Wifi/Hotspot Anda untuk ikut menggunakan VPN ini."},
-            
-            'http_port': {t: "HTTP Port", d: "Port untuk protokol HTTP Proxy. Default: 8800."},
-            'socks_port': {t: "SOCKS5 Port", d: "Port untuk protokol SOCKS5 Proxy. Default: 3080."},
-            'udpgw': {t: "UDPGW Port", d: "UDP Gateway. Sangat penting untuk Game Online dan Call WA. Default: 7300."},
-            'mtu': {t: "MTU", d: "Maximum Transmission Unit. Ukuran paket data. Standar 1500. Jika sering RTO, coba turunkan ke 1400 atau 1280."},
-            
-            'dns_selector': {t: "DNS Mode", d: "Pilih strategi DNS:\n- Default: Ikut settingan App (Aman).\n- Fake-IP: Anti Bengong (Recommended).\n- Custom: Pakai IP DNS pilihan sendiri."},
-            'dns_port': {t: "DNS Port", d: "Port internal untuk DNS Server Clash."},
-            'dns_pri': {t: "DNS Primary", d: "DNS Utama. Disarankan 1.1.1.1 (Cloudflare) atau 8.8.8.8 (Google)."},
-            'dns_sec': {t: "DNS Secondary", d: "DNS Cadangan jika DNS utama gagal."},
-            
-            'interval': {t: "Ping Interval", d: "Seberapa sering (ms) Clash mengecek ping server. 1000ms = 1 detik."},
-            'timeout': {t: "Timeout", d: "Batas waktu tunggu (ms) sebelum koneksi dianggap gagal (RTO)."},
-            'reconnect': {t: "Auto Reconnect", d: "Jumlah percobaan koneksi ulang otomatis sebelum menyerah."},
-            
-            'group_name': {t: "Nama Grup Output", d: "Nama yang akan muncul di menu Proxy. Default 'Itsbad VPN'."},
-            
-            'skip_cert': {t: "Skip Certificate Verify", d: "Melewati verifikasi sertifikat SSL. Wajib ON untuk akun gratisan/self-signed."},
-            'block_ads': {t: "Block Ads", d: "Menambahkan aturan otomatis untuk memblokir domain iklan (Google Ads, dll)."}
+            'mode_auto': {t: "Auto Ping (Url-Test)", d: "Otomatis memilih akun dengan ping (latency) terendah agar koneksi selalu cepat."},
+            'mode_manual': {t: "Manual Select", d: "Anda harus memilih sendiri server/akun mana yang ingin digunakan di menu Proxy FlyClash."},
+            'mode_lb': {t: "Load Balance", d: "Menggabungkan bandwidth beberapa akun. Request dibagi rata ke semua server."},
+            'mode_fallback': {t: "Fallback", d: "Sistem cadangan. Menggunakan Server 1. Jika mati, otomatis pindah ke Server 2."},
+            'always_reconnect': {t: "Always Reconnect", d: "Aplikasi otomatis menghubungkan ulang VPN jika koneksi terputus."},
+            'wakelock': {t: "WakeLock", d: "Mencegah CPU HP tidur saat layar mati agar VPN tidak putus."},
+            'allow_lan': {t: "Allow LAN", d: "Share koneksi VPN via Hotspot/Wifi ke perangkat lain."},
+            'http_port': {t: "HTTP Port", d: "Port protokol HTTP Proxy. Default: 8800."},
+            'socks_port': {t: "SOCKS5 Port", d: "Port protokol SOCKS5 Proxy. Default: 3080."},
+            'udpgw': {t: "UDPGW Port", d: "UDP Gateway. Penting untuk Game Online & Call WA. Default: 7300."},
+            'mtu': {t: "MTU", d: "Ukuran paket data. Standar 1500. Jika RTO, coba turunkan ke 1400/1280."},
+            'dns_selector': {t: "DNS Mode", d: "Default: Ikut System.\nFake-IP: Anti Bengong.\nCustom: Force DNS tertentu."},
+            'dns_port': {t: "DNS Port", d: "Port internal DNS Server."},
+            'dns_pri': {t: "DNS Primary", d: "DNS Utama (1.1.1.1 / 8.8.8.8)."},
+            'dns_sec': {t: "DNS Secondary", d: "DNS Cadangan."},
+            'interval': {t: "Ping Interval", d: "Frekuensi cek ping server (ms). 1000ms = 1 detik."},
+            'timeout': {t: "Timeout", d: "Batas waktu tunggu (ms) sebelum koneksi dianggap gagal."},
+            'reconnect': {t: "Auto Reconnect", d: "Jumlah percobaan koneksi ulang."},
+            'group_name': {t: "Nama Grup Output", d: "Label nama di menu Proxy."},
+            'skip_cert': {t: "Skip Cert", d: "Matikan validasi SSL. Wajib untuk akun gratisan."},
+            'block_ads': {t: "Block Ads", d: "Blokir iklan dasar."}
         };
 
-        // Functions
         function toggleMode(mode) {
             const btn = document.getElementById('btn-' + mode);
-            if (activeModes.has(mode)) {
-                if (activeModes.size > 1) { activeModes.delete(mode); btn.classList.remove('active'); }
-            } else { activeModes.add(mode); btn.classList.add('active'); }
+            if (activeModes.has(mode)) { if (activeModes.size > 1) { activeModes.delete(mode); btn.classList.remove('active'); } } else { activeModes.add(mode); btn.classList.add('active'); }
         }
-
         function toggleDnsFields() {
             const mode = document.getElementById('dns-mode').value;
             const fields = document.getElementById('dns-fields');
-            if(mode === 'default') {
-                fields.classList.add('hidden');
-            } else {
-                fields.classList.remove('hidden');
-            }
+            mode === 'default' ? fields.classList.add('hidden') : fields.classList.remove('hidden');
         }
-
-        function clearInput() {
-            document.getElementById('input-config').value = '';
-            document.getElementById('node-count').innerText = '0 nodes';
-        }
-
-        function resetSettings() {
-            if(confirm("Reset ke settingan default?")) window.location.reload();
-        }
-
+        function clearInput() { document.getElementById('input-config').value = ''; document.getElementById('node-count').innerText = '0 nodes'; }
+        function resetSettings() { if(confirm("Reset ke settingan default?")) window.location.reload(); }
         function switchTab(tab) {
-            document.getElementById('view-js').classList.add('hidden');
-            document.getElementById('view-yaml').classList.add('hidden');
-            document.getElementById('view-sub').classList.add('hidden');
-            
-            document.getElementById('tab-js').classList.remove('active');
-            document.getElementById('tab-yaml').classList.remove('active');
-            document.getElementById('tab-sub').classList.remove('active');
-
-            document.getElementById('view-' + tab).classList.remove('hidden');
-            document.getElementById('tab-' + tab).classList.add('active');
+            ['js', 'yaml', 'sub'].forEach(t => {
+                document.getElementById('view-'+t).classList.add('hidden');
+                document.getElementById('tab-'+t).classList.remove('active');
+            });
+            document.getElementById('view-'+tab).classList.remove('hidden');
+            document.getElementById('tab-'+tab).classList.add('active');
         }
-
-        function showHelp(e, key) {
-            e.preventDefault(); e.stopPropagation();
-            const data = helpData[key];
-            if(data) {
-                document.getElementById('modal-title').innerText = data.t;
-                document.getElementById('modal-desc').innerText = data.d;
-                document.getElementById('help-modal').classList.remove('hidden');
-            }
-        }
-
+        function showHelp(e, key) { e.preventDefault(); e.stopPropagation(); const data = helpData[key]; if(data) { document.getElementById('modal-title').innerText = data.t; document.getElementById('modal-desc').innerText = data.d; document.getElementById('help-modal').classList.remove('hidden'); } }
         function closeHelp() { document.getElementById('help-modal').classList.add('hidden'); }
 
-        // --- PARSER ---
-        // Helper untuk parse raw line
         function parseConfig(line, index) {
             try {
                 if (line.startsWith("vmess://")) {
                     const b64 = line.replace("vmess://", "");
                     const conf = JSON.parse(atob(b64));
-                    return {
-                        original: line,
-                        name: conf.ps || `VMess-${index}`, type: "vmess", server: conf.add, port: parseInt(conf.port), uuid: conf.id, alterId: parseInt(conf.aid || 0), cipher: "auto", tls: conf.tls === "tls", servername: conf.host || conf.sni || "", network: conf.net || "ws", "ws-opts": conf.net === "ws" ? { path: conf.path || "/", headers: { Host: conf.host || "" } } : undefined, "grpc-opts": conf.net === "grpc" ? { "grpc-service-name": conf.path || "grpc" } : undefined
-                    };
+                    return { original: line, name: conf.ps || `VMess-${index}`, type: "vmess", server: conf.add, port: parseInt(conf.port), uuid: conf.id, alterId: parseInt(conf.aid || 0), cipher: "auto", tls: conf.tls === "tls", servername: conf.host || conf.sni || "", network: conf.net || "ws", "ws-opts": conf.net === "ws" ? { path: conf.path || "/", headers: { Host: conf.host || "" } } : undefined, "grpc-opts": conf.net === "grpc" ? { "grpc-service-name": conf.path || "grpc" } : undefined };
                 } else if (line.startsWith("vless://") || line.startsWith("trojan://")) {
                     const url = new URL(line);
                     const isVless = line.startsWith("vless://");
                     const params = url.searchParams;
-                    const result = {
-                        original: line,
-                        name: decodeURIComponent(url.hash.slice(1)) || `${isVless ? 'VLESS' : 'Trojan'}-${index}`, type: isVless ? "vless" : "trojan", server: url.hostname, port: parseInt(url.port), uuid: url.username, password: isVless ? undefined : url.username, tls: params.get("security") === "tls" || params.get("security") === "reality", servername: params.get("sni") || "", network: params.get("type") || "tcp", "client-fingerprint": params.get("fp") || "chrome",
-                    };
+                    const result = { original: line, name: decodeURIComponent(url.hash.slice(1)) || `${isVless ? 'VLESS' : 'Trojan'}-${index}`, type: isVless ? "vless" : "trojan", server: url.hostname, port: parseInt(url.port), uuid: url.username, password: isVless ? undefined : url.username, tls: params.get("security") === "tls" || params.get("security") === "reality", servername: params.get("sni") || "", network: params.get("type") || "tcp", "client-fingerprint": params.get("fp") || "chrome" };
                     if (params.get("type") === "ws") result["ws-opts"] = { path: params.get("path") || "/", headers: { Host: params.get("host") || params.get("sni") || "" } };
                     if (params.get("type") === "grpc") result["grpc-opts"] = { "grpc-service-name": params.get("serviceName") || "grpc" };
                     if (params.get("security") === "reality") result["reality-opts"] = { "public-key": params.get("pbk") || "", "short-id": params.get("sid") || "" };
@@ -385,7 +312,6 @@
             } catch (e) { return null; }
         }
 
-        // --- GENERATOR ---
         function generateScript() {
             const inputVal = document.getElementById('input-config').value;
             const lines = inputVal.split('\n').filter(l => l.trim().length > 5);
@@ -399,37 +325,27 @@
                 return;
             }
 
-            // GET SETTINGS
             const alwaysReconnect = document.getElementById('always-reconnect').checked;
             const wakelock = document.getElementById('wakelock').checked;
             const allowLan = document.getElementById('allow-lan').checked;
             const groupName = document.getElementById('group-name').value;
-            
             const httpPort = document.getElementById('http-port').value;
             const socksPort = document.getElementById('socks-port').value;
             const udpgw = document.getElementById('udpgw').value;
             const mtu = document.getElementById('mtu').value;
-            
             const dnsMode = document.getElementById('dns-mode').value;
             const dnsPort = document.getElementById('dns-port').value;
             const dnsPri = document.getElementById('dns-primary').value;
             const dnsSec = document.getElementById('dns-secondary').value;
-            
             const interval = document.getElementById('interval').value;
             const timeout = document.getElementById('timeout').value;
             const reconnectCount = document.getElementById('reconnect-count').value;
-            
             const skipCert = document.getElementById('skip-cert').checked;
             const blockAds = document.getElementById('block-ads').checked;
-
             const intervalSec = Math.floor(interval / 1000); 
 
-            nodes.forEach(n => {
-                if (skipCert) n['skip-cert-verify'] = true;
-                n.udp = true;
-            });
+            nodes.forEach(n => { if (skipCert) n['skip-cert-verify'] = true; n.udp = true; });
 
-            // 1. JS
             const activeModesArr = Array.from(activeModes);
             let rulesJS = [];
             if(blockAds) rulesJS.push("DOMAIN-KEYWORD,ads,REJECT", "DOMAIN-SUFFIX,doubleclick.net,REJECT");
@@ -437,183 +353,59 @@
 
             const groupsStr = activeModesArr.map(mode => {
                 let niceName = mode === 'url-test' ? "AUTO" : mode === 'select' ? "MANUAL" : mode === 'load-balance' ? "LB" : "FALLBACK";
-                return `{
-        "name": "${groupName} (${niceName})",
-        "type": "${mode}",
-        "url": "http://www.gstatic.com/generate_204",
-        "interval": ${intervalSec}, 
-        "timeout": ${timeout},
-        ${mode === 'load-balance' ? '"strategy": "consistent-hashing",' : ''}
-        ${mode === 'fallback' ? '"lazy": true,' : ''}
-        "proxies": proxies.map(p => p.name)
-    }`;
+                return `{ "name": "${groupName} (${niceName})", "type": "${mode}", "url": "http://www.gstatic.com/generate_204", "interval": ${intervalSec}, "timeout": ${timeout}, ${mode === 'load-balance' ? '"strategy": "consistent-hashing",' : ''} ${mode === 'fallback' ? '"lazy": true,' : ''} "proxies": proxies.map(p => p.name) }`;
             }).join(",\n    ");
 
             let dnsJS = "// DNS: Default (No Override)";
             if (dnsMode !== 'default') {
-                dnsJS = `config.dns = {
-        "enable": true,
-        "ipv6": false,
-        "listen": "0.0.0.0:${dnsPort}",
-        "enhanced-mode": "${dnsMode === 'fake-ip' ? 'fake-ip' : 'redir-host'}",
-        "fake-ip-range": "198.18.0.1/16",
-        "default-nameserver": ["${dnsPri}", "${dnsSec}"],
-        "nameserver": ["${dnsPri}", "${dnsSec}", "https://dns.google/dns-query"],
-        "fallback": ["https://doh.pub/dns-query", "${dnsPri}"],
-    };`;
+                dnsJS = `config.dns = { "enable": true, "ipv6": false, "listen": "0.0.0.0:${dnsPort}", "enhanced-mode": "${dnsMode === 'fake-ip' ? 'fake-ip' : 'redir-host'}", "fake-ip-range": "198.18.0.1/16", "default-nameserver": ["${dnsPri}", "${dnsSec}"], "nameserver": ["${dnsPri}", "${dnsSec}", "https://dns.google/dns-query"], "fallback": ["https://doh.pub/dns-query", "${dnsPri}"], };`;
             }
 
-            const jsOutput = `/**
- * FlyClash Override Generated
- * Dev: Itsbad
- * Group: ${groupName}
- * * [SETTINGS ACTIVE]
- * - Always Reconnect: ${alwaysReconnect}
- * - WakeLock: ${wakelock}
- * - Auto Reconnect: ${reconnectCount}
- * - UDPGW: ${udpgw}
- */
-
-function main(config) {
-    const proxies = ${JSON.stringify(nodes, null, 2)};
-    config.proxies = (config.proxies || []).concat(proxies);
-    
-    // PORTS & TUN
-    config['port'] = ${httpPort};
-    config['socks-port'] = ${socksPort};
-    config['redir-port'] = ${udpgw};
-    config['mixed-port'] = 7890;
-    config['allow-lan'] = ${allowLan};
-    config['ipv6'] = false;
-    
-    // TUN SETTINGS
-    config['tun'] = {
-        "enable": true,
-        "stack": "system",
-        "device": "tun0",
-        "auto-route": true,
-        "auto-detect-interface": true,
-        "dns-hijack": ["any:53"],
-        "mtu": ${mtu}
-    };
-
-    ${dnsJS}
-
-    // GROUPS
-    const newGroups = [
-    ${groupsStr}
-    ];
-
-    if (!config['proxy-groups']) config['proxy-groups'] = [];
-    config['proxy-groups'].unshift(...newGroups);
-
-    // RULES
-    const newRules = ${rulesStr};
-    if(newRules.length > 0) config.rules = newRules.concat(config.rules || []);
-
-    // AUTO ADD TO SELECTORS
-    config['proxy-groups'].forEach(g => {
-        if (g.type === 'select' && !newGroups.find(ng => ng.name === g.name)) {
-            newGroups.forEach(ng => g.proxies.push(ng.name));
-        }
-    });
-
-    return config;
-}`;
+            const jsOutput = `/**\n * FlyClash Override Generated\n * Dev: Itsbad\n * Group: ${groupName}\n * * [SETTINGS ACTIVE]\n * - Always Reconnect: ${alwaysReconnect}\n * - WakeLock: ${wakelock}\n * - Auto Reconnect: ${reconnectCount}\n * - UDPGW: ${udpgw}\n */\n\nfunction main(config) {\n    const proxies = ${JSON.stringify(nodes, null, 2)};\n    config.proxies = (config.proxies || []).concat(proxies);\n    \n    config['port'] = ${httpPort};\n    config['socks-port'] = ${socksPort};\n    config['redir-port'] = ${udpgw};\n    config['mixed-port'] = 7890;\n    config['allow-lan'] = ${allowLan};\n    config['ipv6'] = false;\n    \n    config['tun'] = { "enable": true, "stack": "system", "device": "tun0", "auto-route": true, "auto-detect-interface": true, "dns-hijack": ["any:53"], "mtu": ${mtu} };\n\n    ${dnsJS}\n\n    const newGroups = [\n    ${groupsStr}\n    ];\n\n    if (!config['proxy-groups']) config['proxy-groups'] = [];\n    config['proxy-groups'].unshift(...newGroups);\n\n    const newRules = ${rulesStr};\n    if(newRules.length > 0) config.rules = newRules.concat(config.rules || []);\n\n    config['proxy-groups'].forEach(g => {\n        if (g.type === 'select' && !newGroups.find(ng => ng.name === g.name)) {\n            newGroups.forEach(ng => g.proxies.push(ng.name));\n        }\n    });\n\n    return config;\n}`;
             document.getElementById('output-js').value = jsOutput;
 
-            // 2. YAML
-            let yaml = `# FlyClash Config - Dev: Itsbad
-# Group: ${groupName}
-# Settings: WakeLock=${wakelock}, Reconnect=${alwaysReconnect} (${reconnectCount})
-# MTU=${mtu}, UDPGW=${udpgw}
-
-port: ${httpPort}
-socks-port: ${socksPort}
-redir-port: ${udpgw}
-mixed-port: 7890
-allow-lan: ${allowLan}
-mode: rule
-log-level: info
-ipv6: false
-
-tun:
-  enable: true
-  stack: system
-  device: tun0
-  auto-route: true
-  auto-detect-interface: true
-  dns-hijack:
-    - any:53
-  mtu: ${mtu}
-`;
+            let yaml = `# FlyClash Config - Dev: Itsbad\n# Group: ${groupName}\n# Settings: WakeLock=${wakelock}, Reconnect=${alwaysReconnect} (${reconnectCount})\n# MTU=${mtu}, UDPGW=${udpgw}\n\nport: ${httpPort}\nsocks-port: ${socksPort}\nredir-port: ${udpgw}\nmixed-port: 7890\nallow-lan: ${allowLan}\nmode: rule\nlog-level: info\nipv6: false\n\ntun:\n  enable: true\n  stack: system\n  device: tun0\n  auto-route: true\n  auto-detect-interface: true\n  dns-hijack:\n    - any:53\n  mtu: ${mtu}\n`;
 
             if (dnsMode !== 'default') {
-                yaml += `
-dns:
-  enable: true
-  ipv6: false
-  listen: 0.0.0.0:${dnsPort}
-  enhanced-mode: ${dnsMode === 'fake-ip' ? 'fake-ip' : 'redir-host'}
-  fake-ip-range: 198.18.0.1/16
-  default-nameserver:
-    - ${dnsPri}
-    - ${dnsSec}
-  nameserver:
-    - ${dnsPri}
-    - ${dnsSec}
-    - https://dns.google/dns-query
-`;
+                yaml += `\ndns:\n  enable: true\n  ipv6: false\n  listen: 0.0.0.0:${dnsPort}\n  enhanced-mode: ${dnsMode === 'fake-ip' ? 'fake-ip' : 'redir-host'}\n  fake-ip-range: 198.18.0.1/16\n  default-nameserver:\n    - ${dnsPri}\n    - ${dnsSec}\n  nameserver:\n    - ${dnsPri}\n    - ${dnsSec}\n    - https://dns.google/dns-query\n`;
             } else {
                 yaml += `\n# DNS: Default System\n`;
             }
 
             yaml += `\nproxies:\n`;
             nodes.forEach(n => {
-                yaml += `  - name: ${n.name}\n    type: ${n.type}\n    server: ${n.server}\n    port: ${n.port}\n    uuid: ${n.uuid}\n    cipher: ${n.cipher || 'auto'}\n    udp: true\n    tls: ${n.tls}\n    skip-cert-verify: ${n['skip-cert-verify']}\n    network: ${n.network}\n    servername: ${n.servername}\n`;
+                // FORCE QUOTES FOR YAML
+                yaml += `  - name: "${n.name}"\n    type: ${n.type}\n    server: "${n.server}"\n    port: ${n.port}\n    uuid: "${n.uuid}"\n    cipher: ${n.cipher || 'auto'}\n    udp: true\n    tls: ${n.tls}\n    skip-cert-verify: ${n['skip-cert-verify']}\n    network: ${n.network}\n    servername: "${n.servername}"\n`;
                 if(n['ws-opts']) {
-                    yaml += `    ws-opts:\n      path: ${n['ws-opts'].path}\n      headers:\n        Host: ${n['ws-opts'].headers.Host}\n`;
+                    yaml += `    ws-opts:\n      path: "${n['ws-opts'].path}"\n      headers:\n        Host: "${n['ws-opts'].headers.Host}"\n`;
+                }
+                if(n['grpc-opts']) {
+                    yaml += `    grpc-opts:\n      grpc-service-name: "${n['grpc-opts']['grpc-service-name']}"\n`;
                 }
             });
 
             yaml += `\nproxy-groups:\n`;
             activeModesArr.forEach(mode => {
                 let niceName = mode === 'url-test' ? "AUTO" : mode === 'select' ? "MANUAL" : mode === 'load-balance' ? "LB" : "FALLBACK";
-                yaml += `  - name: ${groupName} (${niceName})\n    type: ${mode}\n    url: http://www.gstatic.com/generate_204\n    interval: ${intervalSec}\n    timeout: ${timeout}\n`;
+                yaml += `  - name: "${groupName} (${niceName})"\n    type: ${mode}\n    url: http://www.gstatic.com/generate_204\n    interval: ${intervalSec}\n    timeout: ${timeout}\n`;
                 if (mode === 'load-balance') yaml += `    strategy: consistent-hashing\n`;
                 if (mode === 'fallback') yaml += `    lazy: true\n`;
-                yaml += `    proxies:\n${nodes.map(n => `      - ${n.name}`).join('\n')}\n`;
+                yaml += `    proxies:\n${nodes.map(n => `      - "${n.name}"`).join('\n')}\n`;
             });
 
             yaml += `\nrules:\n`;
             if (blockAds) yaml += `  - DOMAIN-KEYWORD,ads,REJECT\n  - DOMAIN-SUFFIX,doubleclick.net,REJECT\n`;
-            yaml += `  - MATCH,${groupName} (${activeModesArr.includes('url-test') ? 'AUTO' : 'MANUAL'})\n`;
+            yaml += `  - MATCH,"${groupName} (${activeModesArr.includes('url-test') ? 'AUTO' : 'MANUAL'})"\n`;
 
             document.getElementById('output-yaml').value = yaml;
 
-            // 3. SUBSCRIPTION (BASE64)
-            // Mengambil link original, lalu encode ke Base64
             const rawLinks = nodes.map(n => n.original).join('\n');
             const base64Sub = btoa(rawLinks);
             document.getElementById('output-sub').value = base64Sub;
         }
 
-        function copyText(type) {
-            const el = document.getElementById('output-' + type);
-            el.select();
-            document.execCommand('copy');
-            alert("Berhasil disalin!");
-        }
-
-        function downloadFile(type) {
-            const txt = document.getElementById('output-' + type).value;
-            const blob = new Blob([txt], { type: "text/plain" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = type === 'js' ? 'flyclash-override.js' : 'config.yaml';
-            a.click();
-        }
+        function copyText(type) { const el = document.getElementById('output-' + type); el.select(); document.execCommand('copy'); alert("Berhasil disalin!"); }
+        function downloadFile(type) { const txt = document.getElementById('output-' + type).value; const blob = new Blob([txt], { type: "text/plain" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = type === 'js' ? 'flyclash-override.js' : 'config.yaml'; a.click(); }
     </script>
 </body>
 </html>
