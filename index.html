@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Itsbad Config Generator (Universal)</title>
+    <title>Itsbad Config Generator (Fixed NekoBox)</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/%3E%3C/svg%3E">
 
@@ -378,7 +378,7 @@
             const jsOutput = `/**\n * FlyClash Override Generated\n * Dev: Itsbad\n * Group: ${groupName}\n */\n\nfunction main(config) {\n    const proxies = ${JSON.stringify(nodes, null, 2)};\n    config.proxies = (config.proxies || []).concat(proxies);\n    config['port'] = ${httpPort};\n    config['socks-port'] = ${socksPort};\n    config['redir-port'] = ${udpgw};\n    config['mixed-port'] = 7890;\n    config['allow-lan'] = ${allowLan};\n    config['ipv6'] = false;\n    config['tun'] = { "enable": true, "stack": "system", "device": "tun0", "auto-route": true, "auto-detect-interface": true, "dns-hijack": ["any:53"], "mtu": ${mtu} };\n    ${dnsJS}\n    const newGroups = [\n    ${groupsStr}\n    ];\n    if (!config['proxy-groups']) config['proxy-groups'] = [];\n    config['proxy-groups'].unshift(...newGroups);\n    const newRules = ${rulesStr};\n    if(newRules.length > 0) config.rules = newRules.concat(config.rules || []);\n    config['proxy-groups'].forEach(g => {\n        if (g.type === 'select' && !newGroups.find(ng => ng.name === g.name)) {\n            newGroups.forEach(ng => g.proxies.push(ng.name));\n        }\n    });\n    return config;\n}`;
             document.getElementById('output-js').value = jsOutput;
 
-            // ================== 2. YAML CONFIG (FIXED QUOTES) ==================
+            // ================== 2. YAML CONFIG (FIXED) ==================
             let yaml = `# FlyClash Config - Dev: Itsbad\n# Group: ${groupName}\nport: ${httpPort}\nsocks-port: ${socksPort}\nredir-port: ${udpgw}\nmixed-port: 7890\nallow-lan: ${allowLan}\nmode: rule\nlog-level: info\nipv6: false\ntun:\n  enable: true\n  stack: system\n  device: tun0\n  auto-route: true\n  auto-detect-interface: true\n  dns-hijack:\n    - any:53\n  mtu: ${mtu}\n`;
             if (dnsMode !== 'default') {
                 yaml += `dns:\n  enable: true\n  ipv6: false\n  listen: 0.0.0.0:${dnsPort}\n  enhanced-mode: ${dnsMode === 'fake-ip' ? 'fake-ip' : 'redir-host'}\n  fake-ip-range: 198.18.0.1/16\n  default-nameserver:\n    - ${dnsPri}\n    - ${dnsSec}\n  nameserver:\n    - ${dnsPri}\n    - ${dnsSec}\n    - https://dns.google/dns-query\n`;
@@ -403,25 +403,36 @@
             yaml += `  - MATCH,"${groupName} (${activeModesArr.includes('url-test') ? 'AUTO' : 'MANUAL'})"\n`;
             document.getElementById('output-yaml').value = yaml;
 
-            // ================== 3. JSON NEKOBOX ==================
+            // ================== 3. JSON NEKOBOX (FIXED) ==================
             let sbOutbounds = [];
-            // Add Selector Group
-            sbOutbounds.push({
-                "type": "selector",
-                "tag": `${groupName} (Selector)`,
-                "outbounds": nodes.map(n => n.name).concat(["direct", "block"])
-            });
-            // Add URLTest Group if selected
+            // Create Selector (Manual) Group as MAIN entry point
+            let selectorTag = `${groupName} (Selector)`;
+            let urlTestTag = `${groupName} (Auto)`;
+            
+            // 1. Selector Group (Manual Choice)
+            let selectorOutbounds = nodes.map(n => n.name).concat(["direct", "block"]);
+            
+            // 2. URL Test Group (Auto Choice) - If selected
             if(activeModesArr.includes('url-test')){
                 sbOutbounds.push({
                     "type": "urltest",
-                    "tag": `${groupName} (Auto)`,
+                    "tag": urlTestTag,
                     "outbounds": nodes.map(n => n.name),
                     "url": "http://www.gstatic.com/generate_204",
                     "interval": "5m"
                 });
+                // Add Auto group to Selector options
+                selectorOutbounds.unshift(urlTestTag);
             }
-            // Add Nodes
+
+            // Push Selector Group
+            sbOutbounds.push({
+                "type": "selector",
+                "tag": selectorTag,
+                "outbounds": selectorOutbounds
+            });
+
+            // Add Actual Nodes
             nodes.forEach(n => {
                 let sbNode = {
                     "type": n.type,
@@ -429,7 +440,7 @@
                     "server": n.server,
                     "server_port": n.port,
                     "uuid": n.uuid,
-                    "tls": { "enabled": n.tls, "insecure": n['skip-cert-verify'] }
+                    "tls": { "enabled": n.tls, "insecure": n['skip-cert-verify'], "server_name": n.servername }
                 };
                 if(n.network === 'ws') {
                     sbNode.transport = { 
@@ -449,13 +460,14 @@
                 "log": { "level": "info" },
                 "dns": {
                     "servers": [
-                        { "tag": "remote", "address": dnsPri, "detour": `${groupName} (Selector)` },
+                        { "tag": "remote", "address": dnsPri, "detour": selectorTag },
                         { "tag": "local", "address": "local", "detour": "direct" }
                     ],
                     "rules": [ { "outbound": "any", "server": "remote" } ]
                 },
                 "inbounds": [
-                    { "type": "tun", "tag": "tun-in", "interface_name": "tun0", "inet4_address": "172.19.0.1/30", "auto_route": true, "strict_route": true, "stack": "system", "sniff": true }
+                    { "type": "tun", "tag": "tun-in", "interface_name": "tun0", "inet4_address": "172.19.0.1/30", "auto_route": true, "strict_route": true, "stack": "system", "sniff": true },
+                    { "type": "mixed", "tag": "mixed-in", "listen": "0.0.0.0", "listen_port": 7890 }
                 ],
                 "outbounds": sbOutbounds.concat([
                     { "type": "direct", "tag": "direct" },
@@ -466,8 +478,9 @@
                     "rules": [
                         { "protocol": "dns", "outbound": "dns-out" },
                         { "clash_mode": "Direct", "outbound": "direct" },
-                        { "clash_mode": "Global", "outbound": `${groupName} (Selector)` }
+                        { "clash_mode": "Global", "outbound": selectorTag }
                     ],
+                    "final": selectorTag,
                     "auto_detect_interface": true
                 }
             };
