@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlyClash Override - DNS Select Edition</title>
+    <title>Itsbad Config Generator</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/%3E%3C/svg%3E">
 
@@ -77,7 +77,7 @@
 
     <div class="max-w-7xl mx-auto mb-4 flex justify-between items-center px-2">
         <h1 class="text-xl font-bold text-white flex items-center gap-2">
-            <span class="text-primary text-2xl">⚡</span> FlyClash <span class="text-zinc-500 font-normal">Selector Edition</span>
+            <span class="text-primary text-2xl">⚡</span> Itsbad <span class="text-zinc-500 font-normal">Config Generator</span>
         </h1>
         <div class="text-[10px] font-mono text-zinc-600 border border-zinc-900 px-2 py-1 rounded bg-black/20">Dev: Itsbad</div>
     </div>
@@ -197,7 +197,11 @@
                     </div>
                 </div>
 
-                <div class="divider">EXTRAS</div>
+                <div class="divider">GROUP & EXTRAS</div>
+                <div class="mb-3">
+                    <div class="lbl-container"><span class="lbl">NAMA GRUP (OUTPUT)</span><span class="help-icon" onclick="showHelp(event, 'group_name')">!</span></div>
+                    <input type="text" id="group-name" value="Itsbad VPN" class="input-dark font-bold text-primary">
+                </div>
                 <div class="grid grid-cols-2 gap-2">
                     <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="skip-cert" checked><span>Skip Cert Verify</span></div><span class="help-icon" onclick="showHelp(event, 'skip_cert')">!</span></label>
                     <label class="check-item"><div class="flex gap-2 text-[10px]"><input type="checkbox" id="block-ads"><span>Block Ads</span></div><span class="help-icon" onclick="showHelp(event, 'block_ads')">!</span></label>
@@ -278,6 +282,8 @@
             'interval': {t: "Ping Interval", d: "Seberapa sering (ms) Clash mengecek ping server. 1000ms = 1 detik."},
             'timeout': {t: "Timeout", d: "Batas waktu tunggu (ms) sebelum koneksi dianggap gagal (RTO)."},
             'reconnect': {t: "Auto Reconnect", d: "Jumlah percobaan koneksi ulang otomatis sebelum menyerah."},
+            
+            'group_name': {t: "Nama Grup Output", d: "Nama yang akan muncul di menu Proxy. Ubah ini jika ingin nama yang berbeda dari 'Itsbad VPN'."},
             
             'skip_cert': {t: "Skip Certificate Verify", d: "Melewati verifikasi sertifikat SSL. Wajib ON untuk akun gratisan/self-signed."},
             'block_ads': {t: "Block Ads", d: "Menambahkan aturan otomatis untuk memblokir domain iklan (Google Ads, dll)."}
@@ -373,6 +379,7 @@
             const alwaysReconnect = document.getElementById('always-reconnect').checked;
             const wakelock = document.getElementById('wakelock').checked;
             const allowLan = document.getElementById('allow-lan').checked;
+            const groupName = document.getElementById('group-name').value;
             
             const httpPort = document.getElementById('http-port').value;
             const socksPort = document.getElementById('socks-port').value;
@@ -407,7 +414,7 @@
             const groupsStr = activeModesArr.map(mode => {
                 let niceName = mode === 'url-test' ? "AUTO" : mode === 'select' ? "MANUAL" : mode === 'load-balance' ? "LB" : "FALLBACK";
                 return `{
-        "name": "FLYCLASH (${niceName})",
+        "name": "${groupName} (${niceName})",
         "type": "${mode}",
         "url": "http://www.gstatic.com/generate_204",
         "interval": ${intervalSec}, 
@@ -418,7 +425,6 @@
     }`;
             }).join(",\n    ");
 
-            // DNS LOGIC FOR JS
             let dnsJS = "// DNS: Default (No Override)";
             if (dnsMode !== 'default') {
                 dnsJS = `config.dns = {
@@ -436,6 +442,7 @@
             const jsOutput = `/**
  * FlyClash Override Generated
  * Dev: Itsbad
+ * Group: ${groupName}
  * * [SETTINGS ACTIVE]
  * - Always Reconnect: ${alwaysReconnect}
  * - WakeLock: ${wakelock}
@@ -493,6 +500,7 @@ function main(config) {
 
             // 2. YAML
             let yaml = `# FlyClash Config - Dev: Itsbad
+# Group: ${groupName}
 # Settings: WakeLock=${wakelock}, Reconnect=${alwaysReconnect} (${reconnectCount})
 # MTU=${mtu}, UDPGW=${udpgw}
 
@@ -516,7 +524,6 @@ tun:
   mtu: ${mtu}
 `;
 
-            // DNS LOGIC FOR YAML
             if (dnsMode !== 'default') {
                 yaml += `
 dns:
@@ -548,7 +555,7 @@ dns:
             yaml += `\nproxy-groups:\n`;
             activeModesArr.forEach(mode => {
                 let niceName = mode === 'url-test' ? "AUTO" : mode === 'select' ? "MANUAL" : mode === 'load-balance' ? "LB" : "FALLBACK";
-                yaml += `  - name: FLYCLASH (${niceName})\n    type: ${mode}\n    url: http://www.gstatic.com/generate_204\n    interval: ${intervalSec}\n    timeout: ${timeout}\n`;
+                yaml += `  - name: ${groupName} (${niceName})\n    type: ${mode}\n    url: http://www.gstatic.com/generate_204\n    interval: ${intervalSec}\n    timeout: ${timeout}\n`;
                 if (mode === 'load-balance') yaml += `    strategy: consistent-hashing\n`;
                 if (mode === 'fallback') yaml += `    lazy: true\n`;
                 yaml += `    proxies:\n${nodes.map(n => `      - ${n.name}`).join('\n')}\n`;
@@ -556,7 +563,7 @@ dns:
 
             yaml += `\nrules:\n`;
             if (blockAds) yaml += `  - DOMAIN-KEYWORD,ads,REJECT\n  - DOMAIN-SUFFIX,doubleclick.net,REJECT\n`;
-            yaml += `  - MATCH,FLYCLASH (${activeModesArr.includes('url-test') ? 'AUTO' : 'MANUAL'})\n`;
+            yaml += `  - MATCH,${groupName} (${activeModesArr.includes('url-test') ? 'AUTO' : 'MANUAL'})\n`;
 
             document.getElementById('output-yaml').value = yaml;
         }
